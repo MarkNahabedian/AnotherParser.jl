@@ -1,5 +1,6 @@
 module AnotherParser
 
-# Write your package code here.
+include("BNFtypes.jl")
+include("parser.jl")
 
 end
