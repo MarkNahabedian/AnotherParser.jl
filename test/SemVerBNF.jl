@@ -116,38 +116,43 @@ SemVerBNF = let
         Alternatives(ref("<alphanumeric identifier>"),
                      ref("<digits>"))
 
-    r["<alphanumeric identifier>"]=
-        Alternatives(ref("<non-digit>"),
-                     Sequence(ref("<non-digit>"),
-                              ref("<identifier characters>")),
-                     Sequence(ref("<identifier characters>"),
-                              ref("<non-digit>")),
-                     Sequence(ref("<identifier characters>"),
-                              ref("<non-digit>"),
-                              ref("<identifier characters>")))
+    r["<alphanumeric identifier>"] =
+        Constructor(Alternatives(ref("<non-digit>"),
+                                 Sequence(ref("<non-digit>"),
+                                          ref("<identifier characters>")),
+                                 Sequence(ref("<identifier characters>"),
+                                          ref("<non-digit>")),
+                                 Sequence(ref("<identifier characters>"),
+                                          ref("<non-digit>"),
+                                          ref("<identifier characters>"))),
+                    string)
 
     r["<numeric identifier>"] =
-        Alternatives(CharacterLiteral('0'),
-                     ref("<positive digit>"),
-                     ref("<positive digit> <digits>"))
+        Constructor(Alternatives(CharacterLiteral('0'),
+                                 ref("<positive digit>"),
+                                 ref("<positive digit> <digits>")),
+                    string)
 
     r["<identifier characters>"] =
-        Alternatives(ref("<identifier character>"),
-                     Sequence(ref("<identifier character>"),
-                              ref("<identifier characters>")))
+        Constructor(Alternatives(ref("<identifier character>"),
+                                 Sequence(ref("<identifier character>"),
+                                          ref("<identifier characters>"))),
+                    string)
     
     r["<identifier character>"] =
         Alternatives(ref("<digit>"),
                      ref("<non-digit>"))
 
     r["<non-digit>"] =
-        Alternatives(ref("<letter>"),
-                     CharacterLiteral('-'))
+        Constructor(Alternatives(ref("<letter>"),
+                                 CharacterLiteral('-')),
+                    string)
 
     r["<digits>"] =
-        Alternatives(ref("<digit>"),
-                     Sequence(ref("<digit>"),
-                              ref("<digits>")))
+        Constructor(Alternatives(ref("<digit>"),
+                                 Sequence(ref("<digit>"),
+                                          ref("<digits>"))),
+                    string)
         
     r["<digit>"]=
         Alternatives(CharacterLiteral('0'),
@@ -160,6 +165,10 @@ SemVerBNF = let
         Alternatives([CharacterLiteral(c) for c in 'A':'Z']...,
                      [CharacterLiteral(c) for c in 'a':'z']...)
                      
+    @test recognize(r["<letter>"], "abc", 1) == ('a',2)
+    @test recognize(r["<digits>"], "1234 ", 1) == ("1234", 5)
+    @test recognize(r["<digits>"], "ABCD", 1) == ("ABCD", 5)
+
     return r["<valid semver>"]
 end
 
