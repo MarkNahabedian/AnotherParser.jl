@@ -1,7 +1,13 @@
 export BNFNode, Sequence, Alternatives, Constructor,  NonTerminal, CharacterLiteral
 export BNFRules, BNFRef, recognize
 
+
 abstract type BNFNode end
+
+
+recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
+    recognize(n, input, index, finish)
+
 
 struct Sequence <: BNFNode
     elements::Tuple{Vararg{<:BNFNode}}
@@ -11,11 +17,11 @@ struct Sequence <: BNFNode
     end
 end
 
-function recognize(n::Sequence, input::String, index::Int)
+function recognize(n::Sequence, input::String, index::Int, finish::Int)
     collected = []
     in = index
     for n1 in n.elements
-        v, i = recognize(n1, input, in)
+        v, i = recognize(n1, input, in, finish)
         if v == nothing
             break
         end
@@ -37,11 +43,11 @@ struct Alternatives <: BNFNode
     end
 end
 
-function recognize(n::Alternatives, input::String, index::Int)
+function recognize(n::Alternatives, input::String, index::Int, finish::Int)
     bestv= nothing
     besti = index
     for n1 in n.alternatives
-        v, i = recognize(n1, input, index)
+        v, i = recognize(n1, input, index, finish)
         if i > besti
             bestv = v
             besti = i
@@ -55,7 +61,7 @@ struct CharacterLiteral <: BNFNode
     character::Char
 end
 
-function recognize(n::CharacterLiteral, input::String, index::Int)
+function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
     if index > length(input)
         return nothing,index
     end
@@ -72,8 +78,8 @@ struct Constructor <: BNFNode
     constructor
 end
 
-function recognize(n::Constructor, input::String, index::Int)
-    v, i = recognize(n.node, input,index)
+function recognize(n::Constructor, input::String, index::Int, finish::Int)
+    v, i = recognize(n.node, input, index, finish)
     if v == nothing
         return v, i
     end
@@ -93,15 +99,7 @@ struct BNFRef <:BNFNode
     name::String
 end
 
-function recognize(n::BNFRef, input::String, index::Int)
-    recognize(n.rules[n.name], input, index)
+function recognize(n::BNFRef, input::String, index::Int, finish::Int)
+    recognize(n.rules[n.name], input, index, finish)
 end
-
-
-#=
-struct NonTerminal <: BNFNode
-    name::Symbol
-    bnf::BNFNode
-end
-=#
 
