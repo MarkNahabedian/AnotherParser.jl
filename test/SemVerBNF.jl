@@ -70,22 +70,37 @@ SemVerBNF = let
     ref(name) = BNFRef(r, name)
 
     r["<valid semver>"] =
-        Alternatives(Sequence(ref("<version core>"),
-                              CharacterLiteral('-'),
-                              ref("<pre-release>")),
-                     Sequence(ref("<version core>"),
-                              CharacterLiteral('+'),
-                              ref("<build>")),
-                     Sequence(ref("<version core>"),
-                              CharacterLiteral('-'),
-                              ref("<pre-release>"),
-                              CharacterLiteral('+'),
-                              ref("<build>")))
+        Alternatives(Constructor(ref("<version core>"),
+                                 VersionNumber),
+                     Constructor(Sequence(ref("<version core>"),
+                                          CharacterLiteral('-'),
+                                          ref("<pre-release>")),
+                                 (vc, dash, pre) ->
+                                     VersionNumber(vc..., pre)),
+                     Constructor(Sequence(ref("<version core>"),
+                                          CharacterLiteral('+'),
+                                          ref("<build>")),
+                                 (vc, plus, build) ->
+                                     VersionNumber(vc..., (), build)),
+                     Constructor(Sequence(ref("<version core>"),
+                                          CharacterLiteral('-'),
+                                          ref("<pre-release>"),
+                                          CharacterLiteral('+'),
+                                          ref("<build>")),
+                                 (vc, dash, pre, plus, build) ->
+                                     VersionNumber(vc..., pre, build)))
+
+    undot(args...) = (filter(args) do x
+                          x != '.'
+                      end)
 
     r["<version core>"] =
-        Sequence(ref("<major>"), CharacterLiteral('.'),
-                 ref("<minor>"), CharacterLiteral('.'),
-                 ref("<patch>"))
+        Constructor(Sequence(ref("<major>"), CharacterLiteral('.'),
+                             ref("<minor>"), CharacterLiteral('.'),
+                             ref("<patch>")),
+                    undot)
+
+    str2int(s) = parse(Int, string(s))
 
     r["<major>"] = ref("<numeric identifier>")
 
@@ -96,17 +111,23 @@ SemVerBNF = let
     r["<pre-release>"] = ref("<dot-separated pre-release identifiers>")
 
     r["<dot-separated pre-release identifiers>"] =
-        Alternatives(ref("<pre-release identifier>"),
-                     Sequence(ref("<pre-release identifier>"),
-                              ref("<dot-separated pre-release identifiers>")))
+        Constructor(
+            Alternatives(
+                ref("<pre-release identifier>"),
+                Sequence(ref("<pre-release identifier>"),
+                         ref("<dot-separated pre-release identifiers>"))),
+            undot)
 
     r["<build>"] = ref("<dot-separated build identifiers>")
 
     r["<dot-separated build identifiers>"] =
-        Alternatives(ref("<build identifier>"),
-                     Sequence(ref("<build identifier>"),
-                              CharacterLiteral('.'),
-                              ref("<dot-separated build identifiers>")))
+        Constructor(
+            Alternatives(
+                ref("<build identifier>"),
+                Sequence(ref("<build identifier>"),
+                         CharacterLiteral('.'),
+                         ref("<dot-separated build identifiers>"))),
+            undot)
     
     r["<pre-release identifier>"] =
         Alternatives(ref("<alphanumeric identifier>"),
@@ -114,7 +135,8 @@ SemVerBNF = let
     
     r["<build identifier>"] =
         Alternatives(ref("<alphanumeric identifier>"),
-                     ref("<digits>"))
+                     Constructor(ref("<digits>"),
+                                 str2int ∘ string))
 
     r["<alphanumeric identifier>"] =
         Constructor(Alternatives(ref("<non-digit>"),
@@ -130,23 +152,22 @@ SemVerBNF = let
     r["<numeric identifier>"] =
         Constructor(Alternatives(CharacterLiteral('0'),
                                  ref("<positive digit>"),
-                                 ref("<positive digit> <digits>")),
-                    string)
+                                 Sequence(ref("<positive digit>"),
+                                          ref("<digits>"))),
+                    str2int ∘ string)
 
     r["<identifier characters>"] =
-        Constructor(Alternatives(ref("<identifier character>"),
-                                 Sequence(ref("<identifier character>"),
-                                          ref("<identifier characters>"))),
-                    string)
+        Alternatives(ref("<identifier character>"),
+                     Sequence(ref("<identifier character>"),
+                              ref("<identifier characters>")))
     
     r["<identifier character>"] =
         Alternatives(ref("<digit>"),
                      ref("<non-digit>"))
 
     r["<non-digit>"] =
-        Constructor(Alternatives(ref("<letter>"),
-                                 CharacterLiteral('-')),
-                    string)
+        Alternatives(ref("<letter>"),
+                     CharacterLiteral('-'))
 
     r["<digits>"] =
         Constructor(Alternatives(ref("<digit>"),
@@ -165,9 +186,20 @@ SemVerBNF = let
         Alternatives([CharacterLiteral(c) for c in 'A':'Z']...,
                      [CharacterLiteral(c) for c in 'a':'z']...)
                      
-    @test recognize(r["<letter>"], "abc", 1) == ('a',2)
-    @test recognize(r["<digits>"], "1234 ", 1) == ("1234", 5)
-    @test recognize(r["<digits>"], "ABCD", 1) == ("ABCD", 5)
+    @test recognize(CharacterLiteral('a'), "abc") == ('a', 2)
+    @test recognize(CharacterLiteral('a'), "b") == (nothing, 1)
+    @test recognize(CharacterLiteral('a'), "") == (nothing, 1)
+    @test recognize(r["<letter>"], "abc") == ('a',2)
+    @test recognize(r["<digits>"], "1234 ") == ("1234", 5)
+    @test recognize(ref("<positive digit>"), "0") == (nothing, 1)
+    @test recognize(ref("<positive digit>"), "1") == ('1', 2)
+    @test recognize(r["<numeric identifier>"], "1") == (1, 2)
+    @test recognize(r["<major>"],"2") == (2, 2)
+    @test recognize(r["<minor>"],"21") == (21, 3)
+    @test recognize(r["<version core>"], "3.2.11") == ((3, 2, 11), 7)
+    @test recognize(r["<valid semver>"], "1.2.3") == (VersionNumber(1, 2,3), 6)
+
+    # @test recognize(r["<valid semver>"], "1.2.3-dev") == (VersionNumber(1, 2, 3, "dev"), 10)
 
     return r["<valid semver>"]
 end
