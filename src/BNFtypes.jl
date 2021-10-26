@@ -5,6 +5,14 @@ export BNFRules, BNFRef, recognize
 abstract type BNFNode end
 
 
+"""
+    recognize(::BNFNode, input::String; index, finish)
+Attempt to parse `input` as the specified `BNFNode`.
+Return two values: the  value represented by the matched input,
+and the next index into input.
+If the returned index is equal to the initial index then the
+input did not matchthe `BNFNode`.
+"""
 recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
     recognize(n, input, index, finish)
 
@@ -22,7 +30,7 @@ function recognize(n::Sequence, input::String, index::Int, finish::Int)
     in = index
     for n1 in n.elements
         v, i = recognize(n1, input, in, finish)
-        if v == nothing
+        if i == in
             break
         end
         in = i
@@ -63,7 +71,7 @@ end
 
 function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
     if index > length(input)
-        return nothing,index
+        return nothing, index
     end
     c = input[index]
     if c == n.character
@@ -80,7 +88,7 @@ end
 
 function recognize(n::Constructor, input::String, index::Int, finish::Int)
     v, i = recognize(n.node, input, index, finish)
-    if v == nothing
+    if i == index
         return v, i
     end
     return n.constructor(v...), i
