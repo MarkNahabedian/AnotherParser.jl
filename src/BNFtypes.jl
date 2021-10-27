@@ -1,5 +1,5 @@
 export BNFNode, Sequence, Alternatives, Constructor,  NonTerminal, CharacterLiteral
-export BNFRules, BNFRef, recognize
+export BNFRules, BNFRef, recognize, logReductions, loggingReductions
 
 
 abstract type BNFNode end
@@ -86,12 +86,29 @@ struct Constructor <: BNFNode
     constructor
 end
 
+logReductions = false
+
+function loggingReductions(f, log=true)
+    global logReductions
+    previous = logReductions
+    try
+        logReductions = true
+        f()
+    finally
+        logReductions = previous
+    end
+end
+
 function recognize(n::Constructor, input::String, index::Int, finish::Int)
     v, i = recognize(n.node, input, index, finish)
     if i == index
         return v, i
     end
-    return n.constructor(v...), i
+    v2 = n.constructor(v...)
+    if logReductions
+        @info "$(n.constructor) reduced $v to $v2"
+    end
+    return v2, i
 end
 
 
