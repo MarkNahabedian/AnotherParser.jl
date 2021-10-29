@@ -104,9 +104,9 @@ function recognize(n::Constructor, input::String, index::Int, finish::Int)
     if i == index
         return v, i
     end
-    v2 = n.constructor(v...)
+    v2 = n.constructor(v)
     if logReductions
-        @info "$(n.constructor) reduced $v to $v2"
+        @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
     return v2, i
 end
