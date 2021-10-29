@@ -1,4 +1,5 @@
-export BNFNode, Sequence, Alternatives, Constructor,  NonTerminal, CharacterLiteral
+export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
+export Constructor, StringCollector
 export BNFRules, BNFRef, recognize, logReductions, loggingReductions
 
 
@@ -128,3 +129,28 @@ function recognize(n::BNFRef, input::String, index::Int, finish::Int)
     recognize(n.rules[n.name], input, index, finish)
 end
 
+
+struct StringCollector <: BNFNode
+    node::BNFNode
+end
+
+"""
+# Why is this 0?
+
+SUBSTRING_SIZE = let
+    alpha = *((('a':'z'))...)
+    @allocated SubString(alpha, 3, 20)
+end
+
+# I was hoping to establish a threshhold to etermine if String or
+# SubString was cheaper
+"""
+
+function recognize(n::StringCollector, input::String, index::Int, finish::Int)
+    start = index
+    v, i = recognize(n.node, input, index, finish)
+    if i == index
+        return v, i
+    end
+    return SubString(input, start, i - 1), i
+end

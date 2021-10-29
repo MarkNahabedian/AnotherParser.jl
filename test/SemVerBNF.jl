@@ -65,41 +65,39 @@
            | "y" | "z"
 =#
 
+# To simplify how we construct the intermediate results, we have
+# inserted some intermediate nodes to do the construction.  These are
+# tagged with an asterisk after teh opening < sign in the name.  They
+# are used to distinguish the entry points of recursive rules from the
+# recursion steps.
+
 SemVerBNF = let
 
     # applier(op) = v -> op(v...)
 
-    catstr(c::AbstractChar) = string(c)
-
-    catstr(s::AbstractString) = s
-
-    catstr(c::AbstractChar, s::AbstractString) = c * s
-
-    catstr(s::AbstractString, c::AbstractChar) = s * c
-
-    function catstr(v::Vector)
-        @assert all(v) do e
-            e isa Union{AbstractString, AbstractChar}
-        end
-        *(v...)
-    end
-
     str2int(s) = parse(Int, s)
 
-    undot(x) = [x]
-
-    function undot(v::Vector)
-        if length(v) == 1
-            return v
+    function undot(x)
+        result = []
+        function ud(x)
+            if x == '.'
+                return
+            end
+            if x isa AbstractVector
+                for x1 in x
+                    ud(x1)
+                end
+            else
+                push!(result, x)
+            end
         end
-        id, dot, v = v
-        @assert dot == '.'
-        [id, undot(v)...]
+        ud(x)
+        return Tuple(result)
     end
-    
-    @test undot("foo") == ["foo"]
-    @test undot(["foo", '.', ["bar"]]) == ["foo", "bar"]
-    @test undot(["foo", '.', ["bar", '.', ["baz"]]]) == ["foo", "bar", "baz"]
+        
+    @test undot("foo") == ("foo",)
+    @test undot(["foo", '.', ["bar"]]) == ("foo", "bar")
+    @test undot(["foo", '.', ["bar", '.', ["baz"]]]) == ("foo", "bar", "baz")
 
     r = BNFRules()
     ref(name) = BNFRef(r, name)
@@ -110,20 +108,26 @@ SemVerBNF = let
                      Constructor(Sequence(ref("<version core>"),
                                           CharacterLiteral('-'),
                                           ref("<pre-release>")),
-                                 (vc, dash, pre) ->
-                                     VersionNumber(vc..., pre)),
+                                 function(v)
+                                     (vc, dash, pre) = v
+                                     VersionNumber(vc..., pre)
+                                 end),
                      Constructor(Sequence(ref("<version core>"),
                                           CharacterLiteral('+'),
                                           ref("<build>")),
-                                 (vc, plus, build) ->
-                                     VersionNumber(vc..., (), build)),
+                                 function(v)
+                                     (vc, plus, build) = v
+                                     VersionNumber(vc..., (), build)
+                                 end),
                      Constructor(Sequence(ref("<version core>"),
                                           CharacterLiteral('-'),
                                           ref("<pre-release>"),
                                           CharacterLiteral('+'),
                                           ref("<build>")),
-                                 (vc, dash, pre, plus, build) ->
-                                     VersionNumber(vc..., pre, build)))
+                                 function(v)
+                                     (vc, dash, pre, plus, build) = v
+                                     VersionNumber(vc..., pre, build)
+                                 end))
 
     r["<version core>"] =
         Constructor(Sequence(ref("<major>"), CharacterLiteral('.'),
@@ -138,14 +142,16 @@ SemVerBNF = let
     r["<patch>"] = ref("<numeric identifier>")
 
     r["<pre-release>"] =
-        ref("<dot-separated pre-release identifiers>")
+        Constructor(
+            ref("<dot-separated pre-release identifiers>"),
+            undot)
     
-            r["<dot-separated pre-release identifiers>"] =
-            Alternatives(
-                ref("<pre-release identifier>"),
-    Sequence(ref("<pre-release identifier>"),
-                                     CharacterLiteral('.'),
-                                         ref("<dot-separated pre-release identifiers>")))
+    r["<dot-separated pre-release identifiers>"] =
+        Alternatives(
+            ref("<pre-release identifier>"),
+            Sequence(ref("<pre-release identifier>"),
+                     CharacterLiteral('.'),
+                     ref("<dot-separated pre-release identifiers>")))
     
     r["<build>"] = ref("<dot-separated build identifiers>")
     
@@ -168,32 +174,33 @@ SemVerBNF = let
                                  str2int))
 
     r["<alphanumeric identifier>"] =
-        Alternatives(ref("<non-digit>"),
-                     Constructor(Sequence(ref("<non-digit>"),
-                                          ref("<identifier characters>")),
-                                 catstr),
-                     Constructor(Sequence(ref("<identifier characters>"),
-                                          ref("<non-digit>")),
-                                 catstr),
-                     Constructor(Sequence(ref("<identifier characters>"),
-                                          ref("<non-digit>"),
-                                          ref("<identifier characters>")),
-                                 catstr))
+        StringCollector(
+            Alternatives(ref("<non-digit>"),
+                         Sequence(ref("<non-digit>"),
+                                  ref("<identifier characters>")),
+                         Sequence(ref("<identifier characters>"),
+                                  ref("<non-digit>")),
+                         Sequence(ref("<identifier characters>"),
+                                  ref("<non-digit>"),
+                                  ref("<identifier characters>"))))
 
     r["<numeric identifier>"] =
-        Constructor(Alternatives(CharacterLiteral('0'),
-                                 ref("<positive digit>"),
-                                 Constructor(Sequence(ref("<positive digit>"),
-                                                      ref("<digits>")),
-                                             catstr)),
-                    str2int)
+        Constructor(
+            StringCollector(
+                Alternatives(CharacterLiteral('0'),
+                             ref("<positive digit>"),
+                             Sequence(ref("<positive digit>"),
+                                      ref("<digits>")))),
+            str2int)
 
     r["<identifier characters>"] =
+        StringCollector(
+            ref("<*identifier characters>"))
+
+    r["<*identifier characters>"]=
         Alternatives(ref("<identifier character>"),
-                     Constructor(
-                         Sequence(ref("<identifier character>"),
-                                  ref("<identifier characters>")),
-                         catstr))
+                     Sequence(ref("<identifier character>"),
+                              ref("<*identifier characters>")))
     
     r["<identifier character>"] =
         Alternatives(ref("<digit>"),
@@ -204,11 +211,14 @@ SemVerBNF = let
                      CharacterLiteral('-'))
 
     r["<digits>"] =
+        StringCollector(
+            ref("<*digits>"))
+
+    r["<*digits>"] =
         Alternatives(
             # Reordered the alternatives to reduce calls to <digit>.
-            Constructor(Sequence(ref("<digit>"),
-                                 ref("<digits>")),
-                        catstr),
+            Sequence(ref("<digit>"),
+                     ref("<*digits>")),
             ref("<digit>"))
 
     r["<digit>"]=
@@ -232,31 +242,21 @@ SemVerBNF = let
     @test recognize(r["<numeric identifier>"], "1") == (1, 2)
     @test recognize(r["<major>"],"2") == (2, 2)
     @test recognize(r["<minor>"],"21") == (21, 3)
-
-    @test recognize(r["<version core>"], "3.2.11") == ([3, 2, 11], 7)
-
+    @test recognize(r["<version core>"], "3.2.11") == ((3, 2, 11), 7)
     @test recognize(r["<valid semver>"], "1.2.3") == (VersionNumber(1, 2,3), 6)
     @test recognize(r["<alphanumeric identifier>"], "dev") == ("dev", 4)
     @test recognize(r["<pre-release identifier>"], "dev") == ("dev", 4)
     @test recognize(r["<pre-release identifier>"], "15") == (15, 3)
-    @test recognize(r["<dot-separated pre-release identifiers>"],
-                    "dev") == (["dev"], 4)
-    @test recognize(r["<dot-separated pre-release identifiers>"],
-                    "foo.3.bar") == (["foo", 3, "bar"], 10)
+    @test recognize(r["<pre-release>"], "dev") == (("dev",), 4)
+    @test recognize(r["<pre-release>"],
+                    "foo.3.bar") == (("foo", 3, "bar"), 10)
+    @test recognize(r["<pre-release>"],"3") == ((3,), 2)
+    @test recognize(r["<pre-release>"], "dev") == (("dev",), 4)
+    @test recognize(r["<pre-release>"],"dev.naha.2") == (("dev", "naha", 2), 11)
+    @test recognize(r["<pre-release>"],"dev.naha-2") == (("dev", "naha-2"), 11)
+    @test recognize(r["<valid semver>"], "1.2.3-dev.3") ==
+        (VersionNumber(1, 2, 3, ("dev", 3)), 12)
     
-    loggingReductions(true) do
-        @test recognize(r["<pre-release>"],"3") == ((3,), 2)
-    end
-
-    @test recognize(r["<pre-release>"],"3.4") == ((3, 4), 4)
-
-    @test recognize(r["<pre-release>"], "dev") == (("dev"), 4)
-
-    @test recognize(r["<pre-release>"],"dev.naha.2") == (("dev", "naha", 2), 4)
-    @test recognize(r["<pre-release>"],"dev.naha-2") == (("dev", "naha-2"), 4)
-
-    @test recognize(r["<valid semver>"], "1.2.3-dev") == (VersionNumber(1, 2, 3, "dev"), 10)
-
     return r["<valid semver>"]
 end
 

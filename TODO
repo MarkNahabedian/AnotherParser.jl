@@ -1,0 +1,16 @@
+TODO:
+
+Maybe define a BNF for BNFs using our BNFNodes
+
+syntactic sugar for BNF by transforming Julia Exprs:
+
+str macro for ref.  Need contect to get dictionary
+
+::= for non-terminal definitions
+
+&& and || for Sequence and Alternatives respectively.
+
+What about Constructor?
+Just use function call syntax?
+
+
