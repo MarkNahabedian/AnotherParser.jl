@@ -2,8 +2,13 @@ export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
 export BNFRules, BNFRef, recognize, logReductions, loggingReductions
 
-
 abstract type BNFNode end
+
+if !isdefined(@__MODULE__, Symbol("@bnfnode"))
+    macro bnfnode(e)
+        e
+    end
+end
 
 
 """
@@ -18,7 +23,7 @@ recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
     recognize(n, input, index, finish)
 
 
-struct Sequence <: BNFNode
+@bnfnode struct Sequence <: BNFNode
     elements::Tuple{Vararg{<:BNFNode}}
 
     function Sequence(elements...)
@@ -44,7 +49,7 @@ function recognize(n::Sequence, input::String, index::Int, finish::Int)
 end
 
 
-struct Alternatives <: BNFNode
+@bnfnode struct Alternatives <: BNFNode
     alternatives::Tuple{Vararg{<:BNFNode}}
 
     function Alternatives(alternatives...)
@@ -66,7 +71,7 @@ function recognize(n::Alternatives, input::String, index::Int, finish::Int)
 end
 
 
-struct CharacterLiteral <: BNFNode
+@bnfnode struct CharacterLiteral <: BNFNode
     character::Char
 end
 
@@ -82,7 +87,7 @@ function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
 end
 
 
-struct Constructor <: BNFNode
+@bnfnode struct Constructor <: BNFNode
     node::BNFNode
     constructor
 end
@@ -113,14 +118,14 @@ function recognize(n::Constructor, input::String, index::Int, finish::Int)
 end
 
 
-struct Terminal <: BNFNode
+@bnfnode struct Terminal <: BNFNode
     predicate
 end
 
 BNFRules = Dict{String, BNFNode}
 
-# Provides fgr deferred namelookup
-struct BNFRef <:BNFNode
+# Provides fgr deferred name lookup
+@bnfnode struct BNFRef <:BNFNode
     rules::BNFRules
     name::String
 end
@@ -130,7 +135,7 @@ function recognize(n::BNFRef, input::String, index::Int, finish::Int)
 end
 
 
-struct StringCollector <: BNFNode
+@bnfnode struct StringCollector <: BNFNode
     node::BNFNode
 end
 
