@@ -71,6 +71,7 @@
 # are used to distinguish the entry points of recursive rules from the
 # recursion steps.
 
+@testset "SemVer grammar" begin
 SemVerBNF = let
 
     # applier(op) = v -> op(v...)
@@ -260,3 +261,4 @@ SemVerBNF = let
     return r["<valid semver>"]
 end
 
+end
