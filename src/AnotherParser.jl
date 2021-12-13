@@ -1,8 +1,7 @@
 module AnotherParser
 
+include("note_BNFNode_location.jl")
 include("BNFtypes.jl")
 # include("parser.jl")
-
-include("note_BNFNode_location.jl")
 
 end
