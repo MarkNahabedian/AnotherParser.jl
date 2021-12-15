@@ -17,7 +17,7 @@ using MacroTools: postwalk
                                     function Sequence(elements...)
                                         new(nothing, elements)
                                     end
-                                    function Sequence(source::LineNumberNode,
+                                    function Sequence(source::Union{Nothing, LineNumberNode},
                                                       elements...)
                                         new(source, elements)
                                     end
