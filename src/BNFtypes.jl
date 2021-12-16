@@ -1,6 +1,7 @@
 export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
-export BNFRules, BNFRef, recognize, logReductions, loggingReductions
+export BNFRef, @BNFRef, recognize, logReductions, loggingReductions
+export BNFGrammar, DerivationRule, @DerivationRule
 
 abstract type BNFNode end
 
@@ -122,16 +123,60 @@ end
     predicate
 end
 
-BNFRules = Dict{String, BNFNode}
+
+struct BNFGrammar
+    name::Symbol
+    derivations # ::Dict{String, DerivationRule}
+
+    BNFGrammar(name) = new(name,
+                           # Dict{String, DerivationRule}()
+                           Dict())
+end
+
+function Base.getindex(grammar::BNFGrammar, nonterminal)
+    grammar.derivations[nonterminal]
+end
+
+@bnfnode struct DerivationRule <: BNFNode
+    grammar::BNFGrammar
+    name::String
+    lhs::BNFNode
+
+    function DerivationRule(grammar, name, lhs)
+        p = new(grammar, name, lhs)
+        add_derivation(p)
+        p
+    end
+end
+
+function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
+    recognize(n.lhs, input, index, finish)
+end
+
+function add_derivation(p::DerivationRule)
+    add_derivation(p.grammar, p)
+end
+
+function add_derivation(grammar::BNFGrammar, derivation::DerivationRule)
+    if haskey(grammar.derivations, derivation.name)
+        throw(ErrorException(
+            "The nonterminal $(derivation.name) is already defined in BNFGrammar $(grammar.name)."))
+    end
+    grammar.derivations[derivation.name] = derivation
+end
+
+# ????? Maybe we should merge DerivationRule and BNFRef, but it is
+# really convenient for DerivationRules to automatically add
+# themselves to their grammar.
 
 # Provides fgr deferred name lookup
 @bnfnode struct BNFRef <:BNFNode
-    rules::BNFRules
+    grammar::BNFGrammar
     name::String
 end
 
 function recognize(n::BNFRef, input::String, index::Int, finish::Int)
-    recognize(n.rules[n.name], input, index, finish)
+    recognize(n.grammar[n.name].lhs, input, index, finish)
 end
 
 
