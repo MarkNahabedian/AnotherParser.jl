@@ -81,14 +81,16 @@ macro bnfnode(exp)
              end)
     name = find_name(nameexp)
     mname = Symbol("@$name")
+    source = __source__
+    @assert source isa LineNumberNode
 
     quote
         $(rewrite_struct(exp))
 
-        export $name, $mname
+        export $(esc(name)), $(esc(mname))
 
         macro $(esc(name))(args...)
-            Expr(:call, $(esc(name)), $__source__, args...)
+            Expr(:call, $(esc(name)), $(esc(source)), args...)
         end
     end
 end
