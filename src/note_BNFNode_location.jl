@@ -40,6 +40,9 @@ function rewrite_struct(def::Expr)::Expr
     for e in constructors
         # default source argument
         push!(constructors2,
+              # This might be misleading since it preserves the source
+              # location in the original struct definition even though
+              # we do a code substitution.
               postwalk(e) do e
                   if iscall(e, :new)
                       Expr(:call, :new, nothing, e.args[2:end]...)
@@ -61,7 +64,7 @@ function rewrite_struct(def::Expr)::Expr
                               end
                           end
                       end...)
-                end)        )
+                end))
     end
     :(struct $(bindings[:nameexp])
           source::Union{Nothing, LineNumberNode}
@@ -71,6 +74,14 @@ function rewrite_struct(def::Expr)::Expr
       end)
 end
 
+
+function BNFNodeMacro(macroname, constructorname)
+    args = gensym("args")
+    :(macro $macroname(($args)...)
+          Expr($constructorname,
+               __source__, ($args)...)  # doesn't work
+      end)
+end
 
 export @bnfnode
 
@@ -83,15 +94,11 @@ macro bnfnode(exp)
     mname = Symbol("@$name")
     source = __source__
     @assert source isa LineNumberNode
+    argselipsis = Expr(:(...), Expr(:escape, :args))
 
-    quote
-        $(rewrite_struct(exp))
-
-        export $(esc(name)), $(esc(mname))
-
-        macro $(esc(name))(args...)
-            Expr(:call, $(esc(name)), $(esc(source)), args...)
-        end
-    end
+    Expr(:block,
+         rewrite_struct(exp),
+         Expr(:export, name, mname),
+         esc(BNFNodeMacro(name, name)))
 end
 
