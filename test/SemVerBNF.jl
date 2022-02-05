@@ -106,26 +106,26 @@ end
 
 DerivationRule(
     SemVerGrammar, "<valid semver>",
-    Alternatives(Constructor(gref("<version core>"),
+    @Alternatives(@Constructor(gref("<version core>"),
                                v -> VersionNumber(v...)),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('-'),
+                  @Constructor(@Sequence(gref("<version core>"),
+                                         @CharacterLiteral('-'),
                                          gref("<pre-release>")),
                                function(v)
                                    (vc, dash, pre) = v
                                    VersionNumber(vc..., pre)
                                end),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('+'),
+                  @Constructor(@Sequence(gref("<version core>"),
+                                         @CharacterLiteral('+'),
                                          gref("<build>")),
                                function(v)
                                    (vc, plus, build) = v
                                    VersionNumber(vc..., (), build)
                                end),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('-'),
+                  @Constructor(@Sequence(gref("<version core>"),
+                                         @CharacterLiteral('-'),
                                          gref("<pre-release>"),
-                                         CharacterLiteral('+'),
+                                         @CharacterLiteral('+'),
                                          gref("<build>")),
                                function(v)
                                    (vc, dash, pre, plus, build) = v
@@ -134,8 +134,8 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<version core>",
-    Constructor(Sequence(gref("<major>"), CharacterLiteral('.'),
-                           gref("<minor>"), CharacterLiteral('.'),
+    @Constructor(@Sequence(gref("<major>"), @CharacterLiteral('.'),
+                           gref("<minor>"), @CharacterLiteral('.'),
                            gref("<patch>")),
                  undot))
 
@@ -153,16 +153,16 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<pre-release>",
-    Constructor(
+    @Constructor(
         gref("<dot-separated pre-release identifiers>"),
         undot))
 
 DerivationRule(
     SemVerGrammar, "<dot-separated pre-release identifiers>",
-    Alternatives(
+    @Alternatives(
         gref("<pre-release identifier>"),
-        Sequence(gref("<pre-release identifier>"),
-                  CharacterLiteral('.'),
+        @Sequence(gref("<pre-release identifier>"),
+                  @CharacterLiteral('.'),
                   gref("<dot-separated pre-release identifiers>"))))
 
 DerivationRule(
@@ -171,44 +171,44 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<dot-separated build identifiers>",
-    Constructor(
-        Alternatives(
+    @Constructor(
+        @Alternatives(
             gref("<build identifier>"),
-            Sequence(gref("<build identifier>"),
-                      CharacterLiteral('.'),
+            @Sequence(gref("<build identifier>"),
+                      @CharacterLiteral('.'),
                       gref("<dot-separated build identifiers>"))),
         undot))
 
 DerivationRule(
     SemVerGrammar, "<pre-release identifier>",
-    Alternatives(gref("<alphanumeric identifier>"),
+    @Alternatives(gref("<alphanumeric identifier>"),
                   gref("<numeric identifier>")))
 
 DerivationRule(
     SemVerGrammar, "<build identifier>",
-    Alternatives(gref("<alphanumeric identifier>"),
-                  Constructor(gref("<digits>"),
+    @Alternatives(gref("<alphanumeric identifier>"),
+                  @Constructor(gref("<digits>"),
                                str2int)))
 
 DerivationRule(
     SemVerGrammar, "<alphanumeric identifier>",
     StringCollector(
-        Alternatives(gref("<non-digit>"),
-                      Sequence(gref("<non-digit>"),
+        @Alternatives(gref("<non-digit>"),
+                      @Sequence(gref("<non-digit>"),
                                 gref("<identifier characters>")),
-                      Sequence(gref("<identifier characters>"),
+                      @Sequence(gref("<identifier characters>"),
                                 gref("<non-digit>")),
-                      Sequence(gref("<identifier characters>"),
+                      @Sequence(gref("<identifier characters>"),
                                 gref("<non-digit>"),
                                 gref("<identifier characters>")))))
 
 DerivationRule(
     SemVerGrammar, "<numeric identifier>",
-    Constructor(
+    @Constructor (
         StringCollector(
-            Alternatives(CharacterLiteral('0'),
+            @Alternatives(@CharacterLiteral('0'),
                           gref("<positive digit>"),
-                          Sequence(gref("<positive digit>"),
+                          @Sequence(gref("<positive digit>"),
                                     gref("<digits>")))),
         str2int))
 
@@ -219,19 +219,19 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<*identifier characters>",
-    Alternatives(gref("<identifier character>"),
-                  Sequence(gref("<identifier character>"),
+    @Alternatives(gref("<identifier character>"),
+                  @Sequence(gref("<identifier character>"),
                             gref("<*identifier characters>"))))
 
 DerivationRule(
     SemVerGrammar, "<identifier character>",
-    Alternatives(gref("<digit>"),
+    @Alternatives(gref("<digit>"),
                   gref("<non-digit>")))
 
 DerivationRule(
     SemVerGrammar, "<non-digit>",
-    Alternatives(gref("<letter>"),
-                  CharacterLiteral('-')))
+    @Alternatives(gref("<letter>"),
+                  @CharacterLiteral('-')))
 
 DerivationRule(
     SemVerGrammar, "<digits>",
@@ -240,25 +240,25 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<*digits>",
-    Alternatives(
+    @Alternatives(
         # Reordered the alternatives to reduce calls to <digit>.
-        Sequence(gref("<digit>"),
+        @Sequence(gref("<digit>"),
                   gref("<*digits>")),
         gref("<digit>")))
 
 DerivationRule(
     SemVerGrammar, "<digit>",
-    Alternatives(CharacterLiteral('0'),
+    @Alternatives(@CharacterLiteral('0'),
                   gref("<positive digit>")))
 
 DerivationRule(
     SemVerGrammar, "<positive digit>",
-    Alternatives([CharacterLiteral(c) for c in '1':'9']...))
+    @Alternatives([@CharacterLiteral(c) for c in '1':'9']...))
 
 DerivationRule(
     SemVerGrammar, "<letter>",
-    Alternatives([CharacterLiteral(c) for c in 'A':'Z']...,
-                  [CharacterLiteral(c) for c in 'a':'z']...))
+    @Alternatives([@CharacterLiteral(c) for c in 'A':'Z']...,
+                  [@CharacterLiteral(c) for c in 'a':'z']...))
 
 
 @testset "SemVer grammar" begin
