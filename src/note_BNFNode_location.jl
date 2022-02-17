@@ -78,8 +78,8 @@ end
 function BNFNodeMacro(macroname, constructorname)
     args = gensym("args")
     :(macro $macroname(($args)...)
-          Expr($constructorname,
-               __source__, ($args)...)  # doesn't work
+          Expr(:call, $constructorname,
+               __source__, ($args)...)
       end)
 end
 
