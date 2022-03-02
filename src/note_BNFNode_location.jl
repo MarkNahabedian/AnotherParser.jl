@@ -75,11 +75,14 @@ function rewrite_struct(def::Expr)::Expr
 end
 
 
-function BNFNodeMacro(macroname, constructorname)
+function BNFNodeMacro(macroname, constructorname, m::Module)
     args = gensym("args")
     :(macro $macroname(($args)...)
           Expr(:call, $constructorname,
-               __source__, ($args)...)
+               __source__,
+               ($args)...
+               # map(x -> Expr(:esc, x), $args)...
+                   )
       end)
 end
 
@@ -94,11 +97,14 @@ macro bnfnode(exp)
     mname = Symbol("@$name")
     source = __source__
     @assert source isa LineNumberNode
-    argselipsis = Expr(:(...), Expr(:escape, :args))
-
+    args = gensym("args")
     Expr(:block,
          rewrite_struct(exp),
          Expr(:export, name, mname),
-         esc(BNFNodeMacro(name, name)))
+         # esc(BNFNodeMacro(name, name, __module__))
+         Expr(:macro,
+              Expr(:call, Expr(:escape, name), Expr(:..., args)),
+              Expr(:call, Expr(:escape, name), __source__, Expr(:..., args)))
+         )
 end
 
