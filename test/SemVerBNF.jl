@@ -192,7 +192,7 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<alphanumeric identifier>",
-    StringCollector(
+    @StringCollector(
         @Alternatives(gref("<non-digit>"),
                       @Sequence(gref("<non-digit>"),
                                 gref("<identifier characters>")),
@@ -205,7 +205,7 @@ DerivationRule(
 DerivationRule(
     SemVerGrammar, "<numeric identifier>",
     @Constructor (
-        StringCollector(
+        @StringCollector(
             @Alternatives(@CharacterLiteral('0'),
                           gref("<positive digit>"),
                           @Sequence(gref("<positive digit>"),
@@ -214,7 +214,7 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<identifier characters>",
-    StringCollector(
+    @StringCollector(
         gref("<*identifier characters>")))
 
 DerivationRule(
@@ -235,7 +235,7 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<digits>",
-    StringCollector(
+    @StringCollector(
         gref("<*digits>")))
 
 DerivationRule(
