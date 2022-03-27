@@ -108,7 +108,7 @@ macro bnfnode(exp)
                      $$(esc(name))(
                          $$__source__, 
                          # ($args)...)
-                         $(map(x -> x, args)...))
+                         $(map(x -> Expr(:escape, x), args)...))
                  end
              end
          end)
