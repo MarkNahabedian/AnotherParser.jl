@@ -93,8 +93,7 @@ macro bnfnode(exp)
              macro $(esc(name))(args...)
                  quote
                      $$(esc(name))(
-                         $$__source__, 
-                         # ($args)...)
+                         $$__source__,
                          $(map(x -> Expr(:escape, x), args)...))
                  end
              end
