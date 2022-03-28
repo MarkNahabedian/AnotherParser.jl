@@ -286,3 +286,8 @@ DerivationRule(
         (VersionNumber(1, 2, 3, ("dev", 3)), 12)
 end
 
+
+@testset "@bnfnode captures source locations" begin
+    @test SemVerGrammar.derivations["<version core>"].lhs.source != nothing
+    @test basename(SemVerGrammar.derivations["<version core>"].lhs.source.file) == "SemVerBNF.jl"
+end
