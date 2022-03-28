@@ -74,18 +74,6 @@ function rewrite_struct(def::Expr)::Expr
       end)
 end
 
-
-#=
-function BNFNodeMacro(macroname, constructorname, m::Module)
-    args = gensym("args")
-    Expr(:macro,
-         Expr(:call, Expr(:escape, macroname), Expr(:..., args)),
-         Expr(:call, Expr(:escape, constructorname),
-              # GlobalRef(Base, :__source__),
-              Expr(:..., args)))
-end
-=#
-
 export @bnfnode
 
 macro bnfnode(exp)
@@ -101,7 +89,6 @@ macro bnfnode(exp)
     Expr(:block,
          rewrite_struct(exp),
          Expr(:export, name, mname),
-         # BNFNodeMacro(name, name, __module__)
          quote
              macro $(esc(name))(args...)
                  quote
@@ -111,6 +98,7 @@ macro bnfnode(exp)
                          $(map(x -> Expr(:escape, x), args)...))
                  end
              end
-         end)
+         end
+         )
 end
 

@@ -73,12 +73,6 @@
 
 SemVerGrammar = BNFGrammar(:SemVer)
 
-#=
-macro ref(name)
-    Expr(:call, :BNFRef, :SemVerGrammar, name)
-end
-=#
-
 function gref(name)
     BNFRef(SemVerGrammar, name)
 end
@@ -204,7 +198,7 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<numeric identifier>",
-    @Constructor (
+    @Constructor(
         @StringCollector(
             @Alternatives(@CharacterLiteral('0'),
                           gref("<positive digit>"),
