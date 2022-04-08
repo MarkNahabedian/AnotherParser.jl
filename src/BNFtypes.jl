@@ -177,12 +177,18 @@ end
 
 # Provides fgr deferred name lookup
 @bnfnode struct BNFRef <:BNFNode
-    grammar::BNFGrammar
+    grammar_name::Symbol
     name::String
+
+    BNFRef(grammar_name::Symbol, name::String) =
+        new(grammar_name, name)
+
+    BNFRef(grammar::BNFGrammar, name::String) =
+        BNFRef(grammar.name, name)
 end
 
 function recognize(n::BNFRef, input::String, index::Int, finish::Int)
-    recognize(n.grammar[n.name].lhs, input, index, finish)
+    recognize(AllGrammars[n.grammar_name][n.name].lhs, input, index, finish)
 end
 
 
