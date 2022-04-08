@@ -128,10 +128,16 @@ struct BNFGrammar
     name::Symbol
     derivations # ::Dict{String, DerivationRule}
 
-    BNFGrammar(name) = new(name,
-                           # Dict{String, DerivationRule}()
-                           Dict())
+    function BNFGrammar(name)
+        g = new(name,
+                # Dict{String, DerivationRule}()
+                Dict())
+        AllGrammars[g.name] = g
+        g
+    end
 end
+
+AllGrammars = Dict{Symbol, BNFGrammar}()
 
 function Base.getindex(grammar::BNFGrammar, nonterminal)
     grammar.derivations[nonterminal]
