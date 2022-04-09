@@ -2,6 +2,7 @@ export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
 export BNFRef, @BNFRef, recognize, logReductions, loggingReductions
 export BNFGrammar, DerivationRule, @DerivationRule
+export AllGrammars
 
 abstract type BNFNode end
 
@@ -128,7 +129,7 @@ struct BNFGrammar
     name::Symbol
     derivations # ::Dict{String, DerivationRule}
 
-    function BNFGrammar(name)
+    function BNFGrammar(name::Symbol)
         g = new(name,
                 # Dict{String, DerivationRule}()
                 Dict())
@@ -137,6 +138,10 @@ struct BNFGrammar
     end
 end
 
+
+"""
+A Dict of all defined grammars.
+"""
 AllGrammars = Dict{Symbol, BNFGrammar}()
 
 function Base.getindex(grammar::BNFGrammar, nonterminal)
@@ -144,15 +149,28 @@ function Base.getindex(grammar::BNFGrammar, nonterminal)
 end
 
 @bnfnode struct DerivationRule <: BNFNode
-    grammar::BNFGrammar
+    grammar_name::Symbol
     name::String
     lhs::BNFNode
 
-    function DerivationRule(grammar, name, lhs)
-        p = new(grammar, name, lhs)
+    function DerivationRule(grammar::BNFGrammar, name, lhs)
+        p = new(grammar.name, name, lhs)
         add_derivation(p)
         p
     end
+end
+
+function Base.getproperty(p::DerivationRule, property::Symbol)
+    if property in fieldnames(typeof(p))
+        return getfield(p, property)
+    end
+    if property == :grammar
+        return AllGrammars[p.grammar_name]
+    end
+end
+
+function propertynames(p::DerivationRule)
+    [:grammar, fieldnames(typeof(p))...]
 end
 
 function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
