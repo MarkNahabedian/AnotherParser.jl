@@ -35,9 +35,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories:
-            - src
-            - examples/BNF
+          directories: src,examples/BNF
       - uses: codecov/codecov-action@v2
         with:
           file: lcov.info
