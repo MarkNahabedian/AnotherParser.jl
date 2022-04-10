@@ -1,9 +1,30 @@
 # Some utilities to assist in defining BNF grammars.
 
-# for now this is a NO-OP.  Once we have a working BNF grammar to
-# boostrap with, it will add a production specified by `test` to the
-# grammar named `grammar_name`.
-macro bnf_str(text, grammar_name)
-    text
+
+which_BNF_grammar = nothing
+
+deferred_bnf_strs = []
+
+function do_bnf_str(str::String, grammar_name::Symbol)
+    if !haskey(AllGrammars, grammar_name)
+        BNFGrammar(grammar_name)
+    end
+    g::BNFGrammar = AllGrammars[Symbol(grammar_name)]
+    bnf = AllGrammars[which_BNF_grammar]
+    recognize(bnf["<syntax>"], str)
+end
+
+
+"""
+Parse `str` as BNF and add those productions to the grammar named `grammar_name`.
+"""
+macro bnf_str(str, grammar_name)
+    # HOW TO CAPTURE SOURCE LOCATION? SEE cl_str.
+    grammar_name = Symbol(grammar_name)
+    if which_BNF_grammar === nothing
+        push!(deferred_bnf_strs, (str, grammar_name))
+        return str
+    end
+    do_bnf_str(str, grammar_name)
 end
 
