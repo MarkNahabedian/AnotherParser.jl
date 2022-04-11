@@ -1,15 +1,19 @@
 export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
 export BNFRef, @BNFRef, recognize, logReductions, loggingReductions
-export BNFGrammar, DerivationRule, @DerivationRule
+export BNFGrammar, DerivationRule
 export AllGrammars
 
+
+"""
+    BNFNode
+Abstract supertype for all structs that we use to implement a grammar.
+"""
 abstract type BNFNode end
 
-if !isdefined(@__MODULE__, Symbol("@bnfnode"))
-    macro bnfnode(e)
-        e
-    end
+### ^^^^^ TEMPORARY
+macro bnfnode(e)
+    :(Base.@__doc__($e))
 end
 
 
@@ -25,6 +29,10 @@ recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
     recognize(n, input, index, finish)
 
 
+"""
+    Sequence(nodes...)
+Successively match each of nodes in turn.
+"""
 @bnfnode struct Sequence <: BNFNode
     elements::Tuple{Vararg{<:BNFNode}}
 
@@ -51,6 +59,10 @@ function recognize(n::Sequence, input::String, index::Int, finish::Int)
 end
 
 
+"""
+    Alternatives(nodes...)
+Matches any one element of `nodes`.
+"""
 @bnfnode struct Alternatives <: BNFNode
     alternatives::Tuple{Vararg{<:BNFNode}}
 
@@ -73,6 +85,10 @@ function recognize(n::Alternatives, input::String, index::Int, finish::Int)
 end
 
 
+"""
+    CharacterLiteral(c)
+Matches the single character `c`.
+"""
 @bnfnode struct CharacterLiteral <: BNFNode
     character::Char
 end
@@ -89,6 +105,11 @@ function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
 end
 
 
+"""
+    Constructor(node, constructor_function)
+Apply `constructor_function` to rhe result of recognizing `node`
+and return that as the result.
+"""
 @bnfnode struct Constructor <: BNFNode
     node::BNFNode
     constructor
@@ -120,11 +141,19 @@ function recognize(n::Constructor, input::String, index::Int, finish::Int)
 end
 
 
+#=
+### ***** OBSOLETE?
 @bnfnode struct Terminal <: BNFNode
     predicate
 end
+=#
 
 
+"""
+    BNFGrammar
+Represents a single grammar which can consist of a number of
+`DerivationRule`s.
+"""
 struct BNFGrammar
     name::Symbol
     derivations # ::Dict{String, DerivationRule}
@@ -148,6 +177,13 @@ function Base.getindex(grammar::BNFGrammar, nonterminal)
     grammar.derivations[nonterminal]
 end
 
+
+"""
+    DerivationRule(grammar, rule_name, expression)
+Implements a single production named `name` in the specified `grammar`.
+One can include `expression` in other expressions using
+`BNFRef(grammar, rule_name)`.
+"""
 @bnfnode struct DerivationRule <: BNFNode
     grammar_name::Symbol
     name::String
@@ -193,7 +229,11 @@ end
 # really convenient for DerivationRules to automatically add
 # themselves to their grammar.
 
-# Provides fgr deferred name lookup
+"""
+   BNFRef(grammar, name)
+delegates to the "left hand side" of the `DerivationRule` named `name`
+in `grammar`.
+"""
 @bnfnode struct BNFRef <:BNFNode
     grammar_name::Symbol
     name::String
@@ -209,10 +249,10 @@ function recognize(n::BNFRef, input::String, index::Int, finish::Int)
     recognize(AllGrammars[n.grammar_name][n.name].lhs, input, index, finish)
 end
 
-
 @bnfnode struct StringCollector <: BNFNode
     node::BNFNode
 end
+
 
 """
 # Why is this 0?
@@ -226,6 +266,7 @@ end
 # SubString was cheaper
 """
 
+
 function recognize(n::StringCollector, input::String, index::Int, finish::Int)
     start = index
     v, i = recognize(n.node, input, index, finish)
@@ -234,3 +275,4 @@ function recognize(n::StringCollector, input::String, index::Int, finish::Int)
     end
     return SubString(input, start, i - 1), i
 end
+
