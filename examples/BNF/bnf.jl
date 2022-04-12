@@ -3,7 +3,7 @@
 # This wikipedia article has a BNF for BNF:
 #   https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form
 
-BootstrapBNFGrammar = BNFGrammar(:BNF)
+BootstrapBNFGrammar = BNFGrammar(:BootstrapBNFGrammar)
 
 bnf"""
  <syntax>         ::= <rule> | <rule> <syntax>
@@ -94,7 +94,7 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
                        CharacterLiteral('"')),
                    Sequence(
                        CharacterLiteral('\''),
-                       BNFRef(BootstrapBNFGrammar, "<tex21>"),
+                       BNFRef(BootstrapBNFGrammar, "<text2>"),
                        CharacterLiteral('\''))))
 
 bnf"""
@@ -213,3 +213,9 @@ DerivationRule(BootstrapBNFGrammar, "<rule-char>",
                    BNFRef(BootstrapBNFGrammar, "<digit>"),
                    CharacterLiteral('-')))
 
+
+which_BNF_grammar = :BootstrapBNFGrammar
+
+for e in deferred_bnf_strs
+    do_bnf_str(e...)
+end
