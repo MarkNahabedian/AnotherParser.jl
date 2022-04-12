@@ -251,6 +251,11 @@ function recognize(n::BNFRef, input::String, index::Int, finish::Int)
     recognize(AllGrammars[n.grammar_name][n.name].lhs, input, index, finish)
 end
 
+"""
+   StringCollector
+StringCollector returns the entire substrring of the input that
+was recognized by its subexpression.
+"""
 @bnfnode struct StringCollector <: BNFNode
     node::BNFNode
 end
