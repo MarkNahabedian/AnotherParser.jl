@@ -1,3 +1,8 @@
+
+# Why do I need to do this?
+using Pkg
+Pkg.add("Documenter")
+
 using Documenter
 using AnotherParser
 
