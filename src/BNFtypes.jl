@@ -194,6 +194,8 @@ One can include `expression` in other expressions using
         add_derivation(p)
         p
     end
+    DerivationRule(grammar_name::Symbol, name, lhs) =
+        DerivationRule(AllGrammars[grammar_name], name, lhs)
 end
 
 function Base.getproperty(p::DerivationRule, property::Symbol)
