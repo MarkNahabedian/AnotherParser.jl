@@ -15,7 +15,12 @@ makedocs(;
          pages=[
              "Home" => "index.md",
          ],
-         # repo="https://github.com/MarkNahabedian/AnotherParser.jl/blob/{commit}{path}#L{line}",
+         repo="https://github.com/MarkNahabedian/AnotherParser.jl/blob/{commit}{path}#L{line}",
          sitename="AnotherParser.jl",
          authors="Mark Nahabedian"
-         )
+)
+
+deploydocs(;
+    repo="https://github.com/MarkNahabedian/AnotherParser.jl",
+    devbranch = "main"
+)
