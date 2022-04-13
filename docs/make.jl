@@ -1,13 +1,27 @@
 
-# Why do I need to do this?
 using Pkg
 Pkg.add("Documenter")
+Pkg.add("DocumenterTools")
 
 using Documenter
+using DocumenterTools
 using AnotherParser
+
+#=
+See this document
+https://juliadocs.github.io/Documenter.jl/stable/man/hosting/
+for somewhat rambling instructions about how to set up a
+documentation generation workflow.
+=#
 
 # Temporary hack:
 push!(LOAD_PATH,"../src/")
+
+#=
+# One time setup of deployment secret
+DocumenterTools.genkeys(; user="MarkNahabedian",
+                        repo="AnotherParser.jl")
+=#
 
 makedocs(;
          modules=[AnotherParser],
@@ -15,12 +29,10 @@ makedocs(;
          pages=[
              "Home" => "index.md",
          ],
-         repo="https://github.com/MarkNahabedian/AnotherParser.jl/blob/{commit}{path}#L{line}",
          sitename="AnotherParser.jl",
          authors="Mark Nahabedian"
 )
 
 deploydocs(;
-    repo="https://github.com/MarkNahabedian/AnotherParser.jl",
-    devbranch = "main"
+    repo="github.com/MarkNahabedian/AnotherParser.jl",
 )
