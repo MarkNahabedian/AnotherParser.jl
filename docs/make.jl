@@ -1,8 +1,4 @@
 
-using Pkg
-Pkg.add("Documenter")
-Pkg.add("DocumenterTools")
-
 using Documenter
 using DocumenterTools
 using AnotherParser
