@@ -49,4 +49,10 @@ jobs:
       - uses: julia-actions/julia-docdeploy@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # These are required so that the job can push the generated
+          # documentation to Github.  I used DocumenterTools.genkeys
+          # to get a key pair.  It provides a public key to put in the
+          # repository's Settings/Deploy keys.  It also generates a
+          # private key to put in the repository's
+          # Settings/Secrets/Repository Secrets.
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
