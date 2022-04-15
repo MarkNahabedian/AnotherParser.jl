@@ -1,6 +1,5 @@
 
 using Documenter
-using DocumenterTools
 using AnotherParser
 
 #=
