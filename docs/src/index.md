@@ -39,8 +39,8 @@ using AnotherParser
 BNFGrammar(:example)
 
 # "text" can be one word, or a sequence of words separated by spaces:
-# Note the two uses of Constructor so that the result will be a Tuple of
-# words:
+# Note the two uses of Constructor so that the result will be a
+# single, flat Tuple of words:
 DerivationRule(
     :example,
     "text",
@@ -89,7 +89,7 @@ recognize(AllGrammars[:example]["text"],
           "this  is    a test")
 ```
 
-There is mush room for simplification and syntactic sugar.
+There is much room for simplification and syntactic sugar.
 
 Until I write more documentation, see test/SemVerBNF.jl for an example
 that implements the SemVer version number format.

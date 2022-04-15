@@ -189,7 +189,7 @@ DerivationRule(BootstrapBNFGrammar, "<character1>",
 bnf"""
  <character2>     ::= <character> | '"'
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<character2",
+DerivationRule(BootstrapBNFGrammar, "<character2>",
                Alternatives(
                    BNFRef(BootstrapBNFGrammar, "<character>"),
                    CharacterLiteral('"')))
