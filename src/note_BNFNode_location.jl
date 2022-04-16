@@ -63,7 +63,7 @@ function rewrite_struct(def::Expr)::Expr
                       end...)
                 end)        )
     end
-    :(struct $(bindings[:nameexp])
+    :(Base.@__doc__ struct $(bindings[:nameexp])
           source::Union{Nothing, LineNumberNode}
           $(fields...)
 

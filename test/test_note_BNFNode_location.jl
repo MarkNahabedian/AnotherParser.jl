@@ -11,7 +11,7 @@ using MacroTools: postwalk
               end")
     got = postwalk(rmlines, AnotherParser.rewrite_struct(def))
     want = postwalk(rmlines,
-                    Meta.parse("struct Sequence <: BNFNode
+                    Meta.parse("Base.@__doc__ struct Sequence <: BNFNode
                                     source::Union{Nothing, LineNumberNode}
                                     elements::Tuple{Vararg{<:BNFNode}}
                                     function Sequence(elements...)

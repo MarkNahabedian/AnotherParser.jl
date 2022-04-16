@@ -1,6 +1,6 @@
 export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
-export BNFRef, @BNFRef, recognize, logReductions, loggingReductions
+export BNFRef, recognize, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
 
@@ -10,11 +10,6 @@ export AllGrammars
 Abstract supertype for all structs that we use to implement a grammar.
 """
 abstract type BNFNode end
-
-### ^^^^^ TEMPORARY
-macro bnfnode(e)
-    :(Base.@__doc__($e))
-end
 
 
 """
@@ -36,9 +31,8 @@ Successively match each of nodes in turn.
 @bnfnode struct Sequence <: BNFNode
     elements::Tuple{Vararg{<:BNFNode}}
 
-    function Sequence(elements...)
-        new(elements)
-    end
+    Sequence(elements...) = new(elements)
+    Sequence(elements::Tuple) = new(elements)
 end
 
 function recognize(n::Sequence, input::String, index::Int, finish::Int)
@@ -66,9 +60,8 @@ Matches any one element of `nodes`.
 @bnfnode struct Alternatives <: BNFNode
     alternatives::Tuple{Vararg{<:BNFNode}}
 
-    function Alternatives(alternatives...)
-        new(alternatives)
-    end
+    Alternatives(alternatives...) = new(alternatives)
+    Alternatives(alternatives::Tuple) = new(alternatives)
 end
 
 function recognize(n::Alternatives, input::String, index::Int, finish::Int)
@@ -114,6 +107,7 @@ and return that as the result.
     node::BNFNode
     constructor
 end
+
 
 logReductions = false
 
@@ -166,6 +160,12 @@ struct BNFGrammar
         g
     end
 end
+
+Base.haskey(grammar::BNFGrammar, rule::String) =
+    haskey(grammar.derivations, rule)
+
+Base.getindex(grammar::BNFGrammar, rule::String) =
+    grammar.derivations[rule]
 
 
 """
@@ -247,8 +247,12 @@ in `grammar`.
         BNFRef(grammar.name, name)
 end
 
+function lhs(n::BNFRef)
+    AllGrammars[n.grammar_name][n.name].lhs
+end
+
 function recognize(n::BNFRef, input::String, index::Int, finish::Int)
-    recognize(AllGrammars[n.grammar_name][n.name].lhs, input, index, finish)
+    recognize(lhs(n), input, index, finish)
 end
 
 """
