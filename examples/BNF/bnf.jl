@@ -38,7 +38,7 @@ DerivationRule(BootstrapBNFGrammar, "<opt-whitespace>",
                Alternatives(
                    Sequence(CharacterLiteral(' '),
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>")),
-                   Sequence()))
+                   Empty()))
 
 
 bnf"""
@@ -86,23 +86,27 @@ DerivationRule(BootstrapBNFGrammar, "<term>",
 bnf"""
  <literal>        ::= '"' <text1> '"' | "'" <text2> "'"
 """BNF
+# A double quoted string can contain single quotes.
+# A single quoted string can contain double quotes.
 DerivationRule(BootstrapBNFGrammar, "<literal>",
-               Alternatives(
-                   Sequence(
-                       CharacterLiteral('"'),
-                       BNFRef(BootstrapBNFGrammar, "<text1>"),
-                       CharacterLiteral('"')),
-                   Sequence(
-                       CharacterLiteral('\''),
-                       BNFRef(BootstrapBNFGrammar, "<text2>"),
-                       CharacterLiteral('\''))))
+               Constructor(
+                   Alternatives(
+                       Sequence(
+                           CharacterLiteral('"'),
+                           StringCollector(BNFRef(BootstrapBNFGrammar, "<text1>")),
+                           CharacterLiteral('"')),
+                       Sequence(
+                           CharacterLiteral('\''),
+                           StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
+                           CharacterLiteral('\''))),
+               x -> x[2]))
 
 bnf"""
  <text1>          ::= "" | <character1> <text1>
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<text1>",
                Alternatives(
-                   Sequence(),
+                   Empty(),
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<character1>"),
                        BNFRef(BootstrapBNFGrammar, "<text1>"))))
@@ -112,7 +116,7 @@ bnf"""
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<text2>",
                Alternatives(
-                   Sequence(),
+                   Empty(),
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<character2>"),
                        BNFRef(BootstrapBNFGrammar, "<text2>"))))
@@ -216,6 +220,10 @@ DerivationRule(BootstrapBNFGrammar, "<rule-char>",
 
 which_BNF_grammar = :BootstrapBNFGrammar
 
-for e in deferred_bnf_strs
-    do_bnf_str(e...)
+function bootstrap_bnf()
+    for e in deferred_bnf_strs
+        do_bnf_str(e...)
+    end
+    # which_BNF_grammar = :BNF
 end
+

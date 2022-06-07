@@ -1,9 +1,12 @@
-export BNFNode, Sequence, Alternatives,  NonTerminal, CharacterLiteral
+export BNFNode, Empty, Sequence, Alternatives,  NonTerminal, CharacterLiteral
 export Constructor, StringCollector
 export BNFRef, recognize, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
 
+using NahaJuliaLib
+
+trace_recognize = false
 
 """
     BNFNode
@@ -15,13 +18,25 @@ abstract type BNFNode end
 """
     recognize(::BNFNode, input::String; index, finish)
 Attempt to parse `input` as the specified `BNFNode`.
-Return two values: the  value represented by the matched input,
+Return three values: whether the node matched the input,
+the value represented by the matched input,
 and the next index into input.
-If the returned index is equal to the initial index then the
-input did not matchthe `BNFNode`.
+
 """
-recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
+@trace trace_recognize recognize(n::BNFNode, input::String; index=1, finish=length(input) + 1) =
     recognize(n, input, index, finish)
+
+
+"""
+    Empty()
+Succeed while matching nothing.
+"""
+@bnfnode struct Empty <: BNFNode
+end
+
+@trace trace_recognize function recognize(n::Empty, input::String, index::Int, finish::Int)
+    return true, nothing, index
+end
 
 
 """
@@ -35,21 +50,18 @@ Successively match each of nodes in turn.
     Sequence(elements::Tuple) = new(elements)
 end
 
-function recognize(n::Sequence, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::Sequence, input::String, index::Int, finish::Int)
     collected = []
     in = index
     for n1 in n.elements
-        v, i = recognize(n1, input, in, finish)
-        if i == in
-            break
+        matched, v, i = recognize(n1, input, in, finish)
+        if !matched
+            return false, nothing, index
         end
         in = i
         push!(collected, v)
     end
-    if length(collected) == length(n.elements)
-        return collected, in
-    end
-    return nothing, index
+    return true, collected, in
 end
 
 
@@ -64,17 +76,22 @@ Matches any one element of `nodes`.
     Alternatives(alternatives::Tuple) = new(alternatives)
 end
 
-function recognize(n::Alternatives, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::Alternatives, input::String, index::Int, finish::Int)
     bestv= nothing
-    besti = index
+    # If one of the alternatives is Empty, we want our match to
+    # succeed.
+    besti = index - 1
     for n1 in n.alternatives
-        v, i = recognize(n1, input, index, finish)
-        if i > besti
+        matched, v, i = recognize(n1, input, index, finish)
+        if matched && i > besti
             bestv = v
             besti = i
         end
     end
-    return bestv, besti
+    if besti < index
+        return false, nothing, index
+    end
+    return true, bestv, besti
 end
 
 
@@ -86,15 +103,15 @@ Matches the single character `c`.
     character::Char
 end
 
-function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
     if index > length(input)
-        return nothing, index
+        return false, nothing, index
     end
     c = input[index]
     if c == n.character
-        return c, index + 1
+        return true, c, index + 1
     end
-    return nothing, index
+    return false, nothing, index
 end
 
 
@@ -122,25 +139,17 @@ function loggingReductions(f, log=true)
     end
 end
 
-function recognize(n::Constructor, input::String, index::Int, finish::Int)
-    v, i = recognize(n.node, input, index, finish)
-    if i == index
-        return v, i
+@trace trace_recognize function recognize(n::Constructor, input::String, index::Int, finish::Int)
+    matched, v, i = recognize(n.node, input, index, finish)
+    if !matched
+        return false, v, i
     end
     v2 = n.constructor(v)
     if logReductions
         @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
-    return v2, i
+    return true, v2, i
 end
-
-
-#=
-### ***** OBSOLETE?
-@bnfnode struct Terminal <: BNFNode
-    predicate
-end
-=#
 
 
 """
@@ -211,7 +220,7 @@ function propertynames(p::DerivationRule)
     [:grammar, fieldnames(typeof(p))...]
 end
 
-function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
     recognize(n.lhs, input, index, finish)
 end
 
@@ -251,14 +260,14 @@ function lhs(n::BNFRef)
     AllGrammars[n.grammar_name][n.name].lhs
 end
 
-function recognize(n::BNFRef, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::BNFRef, input::String, index::Int, finish::Int)
     recognize(lhs(n), input, index, finish)
 end
 
 """
    StringCollector
 StringCollector returns the entire substrring of the input that
-was recognized by its subexpression.
+@trace trace_recognize was recognized by its subexpression.
 """
 @bnfnode struct StringCollector <: BNFNode
     node::BNFNode
@@ -278,12 +287,12 @@ end
 """
 
 
-function recognize(n::StringCollector, input::String, index::Int, finish::Int)
+@trace trace_recognize function recognize(n::StringCollector, input::String, index::Int, finish::Int)
     start = index
-    v, i = recognize(n.node, input, index, finish)
-    if i == index
-        return v, i
+    matched, v, i = recognize(n.node, input, index, finish)
+    if !matched
+        return false, v, i
     end
-    return SubString(input, start, i - 1), i
+    return true, SubString(input, start, i - 1), i
 end
 
