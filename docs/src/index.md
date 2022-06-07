@@ -1,7 +1,7 @@
 # AnotherParser.jl
 
-AnotherParser allows one to implement a parser given a grammar
-expressed as
+AnotherParser allows one to implement a parser given a
+hierarchical grammar expressed as
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
 **AnotherParser does not yet directly support a BNF grammar expressed
@@ -12,6 +12,18 @@ expressed as
 
 A grammar is implemented as a tree of structs that are subtypes of
 `BNFNode`.
+
+```@docs
+BNFGrammar
+```
+
+The tree can be broken up into named `DerivationRule`s which can be
+referred to by name via `BNFRef`, and thus shared among different parts
+of the grammar..
+```@docs
+DerivationRule
+```
+
 
 ```@autodocs
 Modules = [ AnotherParser ]
