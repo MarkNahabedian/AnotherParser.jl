@@ -230,18 +230,10 @@ One can include `expression` in other expressions using
         DerivationRule(AllGrammars[grammar_name], name, lhs)
 end
 
-function Base.getproperty(p::DerivationRule, property::Symbol)
-    if property in fieldnames(typeof(p))
-        return getfield(p, property)
-    end
-    if property == :grammar
-        return AllGrammars[p.grammar_name]
-    end
-end
+@njl_getprop DerivationRule
 
-function propertynames(p::DerivationRule)
-    [:grammar, fieldnames(typeof(p))...]
-end
+Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
+    return AllGrammars[p.grammar_name]
 
 @trace trace_recognize function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
     recognize(n.lhs, input, index, finish)
