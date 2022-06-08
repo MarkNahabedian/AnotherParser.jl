@@ -16,8 +16,14 @@ end
 @testset "Test hand coded BNF grammar" begin
     @test recognize(BNFRef(:BootstrapBNFGrammar, "<character1>"), "abcd") ==
         (true, 'a', 2)
-    @test recognize(BNFRef(:BootstrapBNFGrammar, "<literal>"),
-                    "'abcd'") == (true, "abcd", 7)
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<literal>"),
+                                  "'abcd'")
+        @test matched == true
+        @test i == 7
+        @test v isa StringLiteral
+        @test v.str == "abcd"
+    end
     #=
     logger = VectorLogger()
     @eval(AnotherParser, trace_recognize = true)

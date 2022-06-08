@@ -99,7 +99,7 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
                            CharacterLiteral('\''),
                            StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
                            CharacterLiteral('\''))),
-               x -> x[2]))
+                   x -> StringLiteral(x[2])))
 
 bnf"""
  <text1>          ::= "" | <character1> <text1>

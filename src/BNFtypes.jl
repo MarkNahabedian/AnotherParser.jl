@@ -1,4 +1,5 @@
-export BNFNode, Empty, Sequence, Alternatives,  NonTerminal, CharacterLiteral
+export BNFNode, Empty, Sequence, Alternatives,  NonTerminal,
+    CharacterLiteral, StringLiteral
 export Constructor, StringCollector
 export BNFRef, recognize, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
@@ -104,7 +105,7 @@ Matches the single character `c`.
 end
 
 @trace trace_recognize function recognize(n::CharacterLiteral, input::String, index::Int, finish::Int)
-    if index > length(input)
+    if index > min(finish, length(input))
         return false, nothing, index
     end
     c = input[index]
@@ -113,6 +114,28 @@ end
     end
     return false, nothing, index
 end
+
+
+"""
+    StringLiteral(str)
+Matches the string `str`.
+"""
+@bnfnode struct StringLiteral <: BNFNode
+    str::AbstractString
+end
+
+@trace trace_recognize function recognize(n::StringLiteral, input::String, index::Int, finish::Int)
+    e = index + length(n.str) - 1
+    if e > min(finish, length(input))
+        return false, nothing, index
+    end
+    ss = SubString(input, index, e)
+    if n.str == ss
+        return true, ss, e + 1
+    end
+    return false, nothing, index
+end
+
 
 
 """
