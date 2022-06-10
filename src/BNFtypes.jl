@@ -215,19 +215,21 @@ end
 Implements a single production named `name` in the specified `grammar`.
 One can include `expression` in other expressions using
 `BNFRef(grammar, rule_name)`.
+The rule can have a constructor function.
 """
-@bnfnode struct DerivationRule <: BNFNode
+@bnfnode mutable struct DerivationRule <: BNFNode
     grammar_name::Symbol
     name::String
     lhs::BNFNode
+    constructor
 
     function DerivationRule(grammar::BNFGrammar, name, lhs)
-        p = new(grammar.name, name, lhs)
+        p = new(grammar.name, name, lhs, identity)
         add_derivation(p)
         p
     end
     DerivationRule(grammar_name::Symbol, name, lhs) =
-        DerivationRule(AllGrammars[grammar_name], name, lhs)
+        DerivationRule(AllGrammars[grammar_name], name, lhs, identity)
 end
 
 @njl_getprop DerivationRule
@@ -236,7 +238,12 @@ Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
     return AllGrammars[p.grammar_name]
 
 @trace trace_recognize function recognize(n::DerivationRule, input::String, index::Int, finish::Int)
-    recognize(n.lhs, input, index, finish)
+    matched, v, i = recognize(n.lhs, input, index, finish)
+    v2 = n.constructor(v)
+    if logReductions
+        @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
+    end
+    return matched, v2, i
 end
 
 function add_derivation(p::DerivationRule)
@@ -251,9 +258,6 @@ function add_derivation(grammar::BNFGrammar, derivation::DerivationRule)
     grammar.derivations[derivation.name] = derivation
 end
 
-# ????? Maybe we should merge DerivationRule and BNFRef, but it is
-# really convenient for DerivationRules to automatically add
-# themselves to their grammar.
 
 """
    BNFRef(grammar, name)
@@ -271,12 +275,16 @@ in `grammar`.
         BNFRef(grammar.name, name)
 end
 
-function lhs(n::BNFRef)
-    AllGrammars[n.grammar_name][n.name].lhs
-end
+@njl_getprop BNFRef
+
+Base.getproperty(p::BNFRef, ::Val{:grammar}) =
+    AllGrammars[p.grammar_name]
+
+Base.getproperty(n::BNFRef, ::Val{:target}) =
+    AllGrammars[n.grammar_name][n.name]
 
 @trace trace_recognize function recognize(n::BNFRef, input::String, index::Int, finish::Int)
-    recognize(lhs(n), input, index, finish)
+    recognize(n.target, input, index, finish)
 end
 
 """

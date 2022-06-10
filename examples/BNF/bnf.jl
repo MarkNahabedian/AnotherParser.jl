@@ -89,17 +89,16 @@ bnf"""
 # A double quoted string can contain single quotes.
 # A single quoted string can contain double quotes.
 DerivationRule(BootstrapBNFGrammar, "<literal>",
-               Constructor(
-                   Alternatives(
-                       Sequence(
-                           CharacterLiteral('"'),
-                           StringCollector(BNFRef(BootstrapBNFGrammar, "<text1>")),
-                           CharacterLiteral('"')),
-                       Sequence(
-                           CharacterLiteral('\''),
-                           StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
-                           CharacterLiteral('\''))),
-                   x -> StringLiteral(x[2])))
+               Alternatives(
+                   Sequence(
+                       CharacterLiteral('"'),
+                       StringCollector(BNFRef(BootstrapBNFGrammar, "<text1>")),
+                       CharacterLiteral('"')),
+                   Sequence(
+                       CharacterLiteral('\''),
+                       StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
+                       CharacterLiteral('\'')))).constructor =
+                           x -> StringLiteral(x[2])
 
 bnf"""
  <text1>          ::= "" | <character1> <text1>

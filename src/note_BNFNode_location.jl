@@ -11,15 +11,27 @@ function find_name(exp::Expr)
     find_name(exp.args[1])
 end
 
+function grok_struct(def::Expr)
+    mutable = false
+    if @capture(def,
+                mutable struct nameexp_
+                    fields__
+                end)
+        mutable = true
+    elseif !@capture(def,
+                    struct nameexp_
+                        fields__
+                    end)
+        error("@bnfnode: unrecognized struct definition")
+    end
+    return mutable, nameexp, fields
+end
+
 function rewrite_struct(def::Expr)::Expr
-    structpattern = postwalk(rmlines, Meta.parse(
-        "struct nameexp_ fields__ end "))
-    constructorpattern = postwalk(rmlines, Meta.parse(
-        "function fname_(fargs__) fbody__ end"))
-    bindings = MacroTools.match(structpattern, def)
+    mutable, nameexp, f = grok_struct(def)
     fields = []
     constructors = []
-    for e in bindings[:fields]
+    for e in f
         e = longdef(e)
         if isexpr(e, :function)
             push!(constructors, e)
@@ -29,7 +41,7 @@ function rewrite_struct(def::Expr)::Expr
     end
     if length(constructors) == 0
         # Add default constructor
-        name = find_name(bindings[:nameexp])
+        name = find_name(nameexp)
         args = map(find_name, fields)
         push!(constructors,
               :(function $name($(args...))
@@ -42,12 +54,16 @@ function rewrite_struct(def::Expr)::Expr
         push!(constructors2,
               postwalk(e) do e
                   if iscall(e, :new)
+                      # Default the source argument when calling new
+                      # in existing methods:
                       Expr(:call, :new, nothing, e.args[2:end]...)
                   else
                       e
                   end
               end)
         # pass through source argument
+        constructorpattern = postwalk(rmlines, Meta.parse(
+            "function fname_(fargs__) fbody__ end"))
         bindings2 = MacroTools.match(constructorpattern, e)
         push!(constructors2,
               :(function $(bindings2[:fname])(source::Union{Nothing, LineNumberNode},
@@ -61,24 +77,23 @@ function rewrite_struct(def::Expr)::Expr
                               end
                           end
                       end...)
-                end)        )
+                end))
     end
-    :(Base.@__doc__ struct $(bindings[:nameexp])
-          source::Union{Nothing, LineNumberNode}
-          $(fields...)
-
-          $(constructors2...)
-      end)
+    Expr(:macrocall, Expr(:., :Base, QuoteNode(Symbol("@__doc__"))),
+         nothing, # LineNumberNode
+         Expr(:struct, mutable, nameexp,
+              Expr(:block,
+                   Expr(:(::), :source,
+                        Expr(:curly, :Union, Nothing, LineNumberNode)),
+                   fields...,
+                   constructors2...)))
 end
 
 
 export @bnfnode
 
 macro bnfnode(exp)
-    @capture(exp,
-             struct nameexp_
-                 fields__
-             end)
+    mutable, nameexp, fields = grok_struct(exp)
     name = find_name(nameexp)
     mname = Symbol("@$name")
     source = __source__
@@ -92,6 +107,7 @@ macro bnfnode(exp)
         macro $(esc(name))(args...)
             Expr(:call, $(esc(name)), $(esc(source)), args...)
         end
+        $(esc(name))
     end
 end
 
