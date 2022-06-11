@@ -22,10 +22,7 @@ DerivationRule(BootstrapBNFGrammar, "<rule>",
                         BNFRef(BootstrapBNFGrammar, "<rule-name>"),
                         CharacterLiteral('>'),
                         BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                        Sequence(
-                            CharacterLiteral(':'),
-                            CharacterLiteral(':'),
-                            CharacterLiteral('=')),
+                        StringLiteral("::="),
                         BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                         BNFRef(BootstrapBNFGrammar, "<expression>"),
                         BNFRef(BootstrapBNFGrammar, "<line-end>")))
@@ -78,7 +75,7 @@ bnf"""
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<term>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<literal"),
+                   BNFRef(BootstrapBNFGrammar, "<literal>"),
                    Sequence(CharacterLiteral('<'),
                             BNFRef(BootstrapBNFGrammar, "<rule-name>"),
                             CharacterLiteral('>'))))
@@ -216,6 +213,16 @@ DerivationRule(BootstrapBNFGrammar, "<rule-char>",
                    BNFRef(BootstrapBNFGrammar, "<digit>"),
                    CharacterLiteral('-')))
 
+
+# The Wikipedia pahe did not include this rule
+bnf"""
+ <EOL>   ::= '\n'
+"""BNF
+DerivationRule(BootstrapBNFGrammar, "<EOL>",
+               CharacterLiteral('\n'))
+
+
+@assert !check_references(BootstrapBNFGrammar)
 
 which_BNF_grammar = :BootstrapBNFGrammar
 
