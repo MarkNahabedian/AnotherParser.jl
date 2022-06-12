@@ -25,8 +25,12 @@ DerivationRule(BootstrapBNFGrammar, "<rule>",
                         StringLiteral("::="),
                         BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                         BNFRef(BootstrapBNFGrammar, "<expression>"),
-                        BNFRef(BootstrapBNFGrammar, "<line-end>")))
-
+                        BNFRef(BootstrapBNFGrammar, "<line-end>"))
+               ).constructor = function (elts, grammar_name)
+                   rule_name = join(elts[2:4])
+                   expression = elts[8]
+                   DerivationRule(grammar_name, rule_name, expression)
+               end
 
 bnf"""
  <opt-whitespace> ::= " " <opt-whitespace> | ""
@@ -48,7 +52,20 @@ DerivationRule(BootstrapBNFGrammar, "<expression>",
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>")),
                    Sequence(BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                             BNFRef(BootstrapBNFGrammar, "<expression>"))
-               ))
+               )).constructor =
+                   function (elts, grammar_name)
+                       if length(elts) == 1
+                           return elts[1]
+                       end
+                       list = elts[1]
+                       expression = elts[5]
+                       if expression isa Alternatives
+                           Alternatives(list, expression.alternatives...)
+                       else
+                           Sequence(term)
+                       end
+                   end
+                   
 
 bnf"""
  <line-end>       ::= <opt-whitespace> <EOL> | <line-end> <line-end>
@@ -68,7 +85,20 @@ DerivationRule(BootstrapBNFGrammar, "<list>",
                    BNFRef(BootstrapBNFGrammar, "<term>"),
                    Sequence(BNFRef(BootstrapBNFGrammar, "<term>"),
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                            BNFRef(BootstrapBNFGrammar, "<list>"),)))
+                            BNFRef(BootstrapBNFGrammar, "<list>"),))
+               ).constructor =
+                   function (elts, grammar_name)
+                       if length(elts) == 1
+                           return elts[1]
+                       end
+                       term = elts[1]
+                       list = elts[3]
+                       if list isa Sequence
+                           Sequence(term, list.elements...)
+                       else
+                           Sequence(term)
+                       end
+                   end
 
 bnf"""
  <term>           ::= <literal> | "<" <rule-name> ">"
@@ -78,7 +108,14 @@ DerivationRule(BootstrapBNFGrammar, "<term>",
                    BNFRef(BootstrapBNFGrammar, "<literal>"),
                    Sequence(CharacterLiteral('<'),
                             BNFRef(BootstrapBNFGrammar, "<rule-name>"),
-                            CharacterLiteral('>'))))
+                            CharacterLiteral('>')))
+                       ).constructor =
+                           function (elts, grammar_name)
+                               if length(elts) == 1
+                                   return elts[1]
+                               end
+                               BNFRef(grammar_name, join(elts))
+                           end
 
 bnf"""
  <literal>        ::= '"' <text1> '"' | "'" <text2> "'"
@@ -95,7 +132,7 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
                        CharacterLiteral('\''),
                        StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
                        CharacterLiteral('\'')))).constructor =
-                           x -> StringLiteral(x[2])
+                           (x, grammar_name) -> StringLiteral(x[2])
 
 bnf"""
  <text1>          ::= "" | <character1> <text1>

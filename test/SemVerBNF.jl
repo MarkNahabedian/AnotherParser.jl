@@ -107,37 +107,40 @@ end
 DerivationRule(
     SemVerGrammar, "<valid semver>",
     Alternatives(Constructor(gref("<version core>"),
-                               v -> VersionNumber(v...)),
+                             ignore_context(v -> VersionNumber(v...))),
                   Constructor(Sequence(gref("<version core>"),
                                          CharacterLiteral('-'),
                                          gref("<pre-release>")),
-                               function(v)
-                                   (vc, dash, pre) = v
-                                   VersionNumber(vc..., pre)
-                               end),
+                              ignore_context(
+                                  function(v)
+                                      (vc, dash, pre) = v
+                                      VersionNumber(vc..., pre)
+                                  end)),
                   Constructor(Sequence(gref("<version core>"),
                                          CharacterLiteral('+'),
                                          gref("<build>")),
-                               function(v)
-                                   (vc, plus, build) = v
-                                   VersionNumber(vc..., (), build)
-                               end),
+                              ignore_context(
+                                  function(v)
+                                      (vc, plus, build) = v
+                                      VersionNumber(vc..., (), build)
+                                  end)),
                   Constructor(Sequence(gref("<version core>"),
                                          CharacterLiteral('-'),
                                          gref("<pre-release>"),
                                          CharacterLiteral('+'),
                                          gref("<build>")),
-                               function(v)
-                                   (vc, dash, pre, plus, build) = v
-                                   VersionNumber(vc..., pre, build)
-                               end)))
+                              ignore_context(
+                                  function(v)
+                                      (vc, dash, pre, plus, build) = v
+                                      VersionNumber(vc..., pre, build)
+                                  end))))
 
 DerivationRule(
     SemVerGrammar, "<version core>",
     Constructor(Sequence(gref("<major>"), CharacterLiteral('.'),
                            gref("<minor>"), CharacterLiteral('.'),
                            gref("<patch>")),
-                 undot))
+                 ignore_context(undot)))
 
 DerivationRule(
     SemVerGrammar, "<major>",
@@ -155,7 +158,7 @@ DerivationRule(
     SemVerGrammar, "<pre-release>",
     Constructor(
         gref("<dot-separated pre-release identifiers>"),
-        undot))
+        ignore_context(undot)))
 
 DerivationRule(
     SemVerGrammar, "<dot-separated pre-release identifiers>",
@@ -177,7 +180,7 @@ DerivationRule(
             Sequence(gref("<build identifier>"),
                       CharacterLiteral('.'),
                       gref("<dot-separated build identifiers>"))),
-        undot))
+        ignore_context(undot)))
 
 DerivationRule(
     SemVerGrammar, "<pre-release identifier>",
@@ -187,8 +190,8 @@ DerivationRule(
 DerivationRule(
     SemVerGrammar, "<build identifier>",
     Alternatives(gref("<alphanumeric identifier>"),
-                  Constructor(gref("<digits>"),
-                               str2int)))
+                 Constructor(gref("<digits>"),
+                             ignore_context(str2int))))
 
 DerivationRule(
     SemVerGrammar, "<alphanumeric identifier>",
@@ -210,7 +213,7 @@ DerivationRule(
                           gref("<positive digit>"),
                           Sequence(gref("<positive digit>"),
                                     gref("<digits>")))),
-        str2int))
+        ignore_context(str2int)))
 
 DerivationRule(
     SemVerGrammar, "<identifier characters>",

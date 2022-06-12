@@ -11,7 +11,7 @@ function do_bnf_str(str::String, grammar_name::Symbol)
     end
     g::BNFGrammar = AllGrammars[Symbol(grammar_name)]
     bnf = AllGrammars[which_BNF_grammar]
-    recognize(bnf["<syntax>"], str)
+    recognize(bnf["<syntax>"], str; context=grammar_name)
 end
 
 
