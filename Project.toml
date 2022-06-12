@@ -8,6 +8,7 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 NahaJuliaLib = "9569be99-1faa-4e84-9751-444b87a7f9a0"
+PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 VectorLogging = "ec499083-3b8a-4310-a81e-8622934b14d2"
 
 [compat]
