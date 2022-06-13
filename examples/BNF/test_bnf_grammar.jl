@@ -24,6 +24,13 @@ end
         @test v isa StringLiteral
         @test v.str == "abcd"
     end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<rule-name>"),
+                                  "abcd")
+        @test matched == true
+        @test i == 5
+        @test v == "abcd"
+    end
     #=
     logger = VectorLogger()
     @eval(AnotherParser, trace_recognize = true)
