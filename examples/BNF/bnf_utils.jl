@@ -1,6 +1,7 @@
 # Some utilities to assist in defining BNF grammars.
 
 export @bnf_str
+export flatten_to_string
 
 which_BNF_grammar = nothing
 
@@ -27,5 +28,25 @@ macro bnf_str(str, grammar_name)
         return str
     end
     do_bnf_str(str, grammar_name)
+end
+
+
+"""
+    flatten_to_string(v)
+Flatten a tail recursive Vector of characters to a string.
+"""
+function flatten_to_string(v)
+    b = IOBuffer()
+    function walk(v)
+        if v == nothing
+            return
+        end
+        @assert v isa Vector
+        @assert length(v) == 2
+        write(b, v[1])
+        walk(v[2])
+    end
+    walk(v)
+    String(take!(b))
 end
 

@@ -111,8 +111,8 @@ DerivationRule(BootstrapBNFGrammar, "<term>",
                             CharacterLiteral('>')))
                        ).constructor =
                            function (elts, grammar_name)
-                               if length(elts) == 1
-                                   return elts[1]
+                               if elts isa StringLiteral
+                                   return elts
                                end
                                BNFRef(grammar_name, join(elts))
                            end
@@ -231,15 +231,36 @@ DerivationRule(BootstrapBNFGrammar, "<character2>",
                    BNFRef(BootstrapBNFGrammar, "<character>"),
                    CharacterLiteral('"')))
 
+#=
+# I think this production form the Wikipedia page is incorrect:
 bnf"""
  <rule-name>      ::= <letter> | <rule-name> <rule-char>
 """BNF
+# This gets a stack overflow error.
 DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                Alternatives(
                    BNFRef(BootstrapBNFGrammar, "<letter>"),
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<rule-name>"),
                        BNFRef(BootstrapBNFGrammar, "<rule-char>"))))
+=#
+bnf"""
+ <rule-name>      ::= <letter> <rule-name2>
+ <rule-name2>     ::= "" | <rule-char> <rule-name2>
+"""BNF
+# I believe the intent is that a <rule-name>must begin with a letter,
+# followed by any number of <rule-char>s.
+DerivationRule(BootstrapBNFGrammar, "<rule-name>",
+               Sequence(
+                   BNFRef(BootstrapBNFGrammar, "<letter>"),
+                   BNFRef(BootstrapBNFGrammar, "<rule-name2>"))).constructor =
+                       ignore_context(flatten_to_string)
+                       
+DerivationRule(BootstrapBNFGrammar, "<rule-name2>",
+               Alternatives(
+                   Empty(),
+                   Sequence(BNFRef(BootstrapBNFGrammar, "<rule-char>"),
+                            BNFRef(BootstrapBNFGrammar, "<rule-name2>"))))
 
 bnf"""
  <rule-char>      ::= <letter> | <digit> | "-"
