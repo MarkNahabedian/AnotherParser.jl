@@ -1,5 +1,6 @@
 # Some utilities to assist in defining BNF grammars.
 
+export @bnf_str
 
 which_BNF_grammar = nothing
 
