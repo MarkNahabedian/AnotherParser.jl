@@ -14,6 +14,7 @@ VectorLogging = "ec499083-3b8a-4310-a81e-8622934b14d2"
 [compat]
 DataStructures = "0.18"
 MacroTools = "0.5"
+PrettyPrint = "0.2"
 julia = "1"
 
 [extras]
