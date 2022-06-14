@@ -84,8 +84,6 @@ macro bnfnode(exp)
     name = find_name(nameexp)
     mname = Symbol("@$name")
     args = gensym("args")
-    mbody(s) = Expr(:call, Expr(:escape, name), s,
-                    Expr(:..., args))
     Expr(:block,
          rewrite_struct(exp),
          Expr(:export, name, mname),
