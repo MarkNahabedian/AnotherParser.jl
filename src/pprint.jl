@@ -1,6 +1,4 @@
 
-using PrettyPrint
-
 export show_grammar
 
 """
@@ -53,18 +51,29 @@ PrettyPrint.pp_impl(io, o::Alternatives, indent::Int) =
 function PrettyPrint.pp_impl(io, o::StringCollector, indent::Int)
     r = "StringCollector("
     print(io, r)
-    PrettyPrint.pp_impl(io, o.node, indent + 4)
+    pprint(io, o.node, indent + 4)
     print(io, ")")
     indent + 2
 end
 
 function PrettyPrint.pp_impl(io, o::Constructor, indent::Int)
     r = "Constructor("
-    print(o, r)
-    PrettyPrint.pp_impl(io, o.node, indent + 4)
+    print(io, r)
+    pprint(io, o.node, indent + 4)
     print(io, ",\n")
-    PrettyPrint.pp_impl(io, o.constructor, indent + 4)
+    pprinit(io, o.constructor, indent + 4)
     print(io, ")")
     indent + 2
 end
 
+function PrettyPrint.pp_impl(io, o::DerivationRule, indent::Int)
+    r = "DerivationRule("
+    print(io, r)
+    pprint(o.grammar_name, indent + 4)
+    print(io, ",\n")
+    pprint(o.name, indent + 4)
+    print(io, ",\n")
+    pprint(o.lhs, indent + 4)
+    print(io, ")")
+    indent + 2
+end
