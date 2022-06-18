@@ -18,7 +18,7 @@ abstract type BNFNode end
 
 
 """
-    recognize(::BNFNode, input::String; index, finish)
+    recognize(::BNFNode, input::AbstractString; index, finish)
 Attempt to parse `input` as the specified `BNFNode`.
 Return three values: whether the node matched the input,
 the value represented by the matched input,
@@ -27,7 +27,7 @@ The `context` argument is passed to constructor functions
 (see `Constructor` and `DerivationRule`) but
 is otherwise unused.
 """
-@trace trace_recognize recognize(n::BNFNode, input::String;
+@trace trace_recognize recognize(n::BNFNode, input::AbstractString;
                                  index=1, finish=length(input) + 1,
                                  context=nothing) =
     recognize(n, input, index, finish, context)
@@ -46,7 +46,7 @@ Succeed if input is exhausted.
 end
 
 @trace trace_recognize function recognize(n::EndOfInput,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     return exhausted(input, index, finish), nothing, index
 end
@@ -60,7 +60,7 @@ Succeed while matching nothing.
 end
 
 @trace trace_recognize function recognize(n::Empty,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     return true, nothing, index
 end
@@ -78,7 +78,7 @@ Successively match each of nodes in turn.
 end
 
 @trace trace_recognize function recognize(n::Sequence,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     collected = []
     in = index
@@ -106,7 +106,7 @@ Matches any one element of `nodes`.
 end
 
 @trace trace_recognize function recognize(n::Alternatives,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     alts_matched = false
     bestv = nothing
@@ -137,7 +137,7 @@ Matches the single character `c`.
 end
 
 @trace trace_recognize function recognize(n::CharacterLiteral,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     if exhausted(input, index, finish)
         return false, nothing, index
@@ -159,7 +159,7 @@ Matches the string `str`.
 end
 
 @trace trace_recognize function recognize(n::StringLiteral,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     e = index + length(n.str) - 1
     if exhausted(input, e, finish)
@@ -199,7 +199,7 @@ function loggingReductions(f, log=true)
 end
 
 @trace trace_recognize function recognize(n::Constructor,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize(n.node, input, index, finish, context)
     if !matched
@@ -279,7 +279,7 @@ Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
 ignore_context(f) = (x, context) -> f(x)
 
 @trace trace_recognize function recognize(n::DerivationRule,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize(n.lhs, input, index, finish, context)
     if !matched
@@ -330,7 +330,7 @@ Base.getproperty(n::BNFRef, ::Val{:target}) =
     AllGrammars[n.grammar_name][n.name]
 
 @trace trace_recognize function recognize(n::BNFRef,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     recognize(n.target, input, index, finish, context)
 end
@@ -359,7 +359,7 @@ end
 
 
 @trace trace_recognize function recognize(n::StringCollector,
-                                          input::String, index::Int, finish::Int,
+                                          input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     start = index
     matched, v, i = recognize(n.node, input, index, finish, context)
