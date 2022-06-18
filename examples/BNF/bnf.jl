@@ -39,7 +39,7 @@ DerivationRule(BootstrapBNFGrammar, "<opt-whitespace>",
                Alternatives(
                    Sequence(CharacterLiteral(' '),
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>")),
-                   Empty())
+                   StringLiteral(""))
                ).constructor =
                    (v, context) -> nothing
 
@@ -146,7 +146,7 @@ bnf"""
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<text1>",
                Alternatives(
-                   Empty(),
+                   StringLiteral(""),
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<character1>"),
                        BNFRef(BootstrapBNFGrammar, "<text1>"))))
@@ -156,7 +156,7 @@ bnf"""
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<text2>",
                Alternatives(
-                   Empty(),
+                   StringLiteral(""),
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<character2>"),
                        BNFRef(BootstrapBNFGrammar, "<text2>"))))
@@ -266,7 +266,7 @@ DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                        
 DerivationRule(BootstrapBNFGrammar, "<rule-name2>",
                Alternatives(
-                   Empty(),
+                   StringLiteral(""),
                    Sequence(BNFRef(BootstrapBNFGrammar, "<rule-char>"),
                             BNFRef(BootstrapBNFGrammar, "<rule-name2>"))))
 
@@ -280,7 +280,7 @@ DerivationRule(BootstrapBNFGrammar, "<rule-char>",
                    CharacterLiteral('-')))
 
 
-# The Wikipedia pahe did not include this rule
+# The Wikipedia page did not include this rule
 bnf"""
  <EOL>   ::= '\n'
 """BNF
@@ -300,6 +300,9 @@ function bootstrap_bnf()
             count += 1
             do_bnf_str(e...)
         catch err
+            if err isa InterruptException
+                rethrow(err)
+            end
             println("$(e[1])")
             errors += 1
         end
