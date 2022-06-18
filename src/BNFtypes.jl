@@ -1,4 +1,4 @@
-export BNFNode, Empty, Sequence, Alternatives,  NonTerminal,
+export BNFNode, EndOfInput, Empty, Sequence, Alternatives,  NonTerminal,
     CharacterLiteral, StringLiteral
 export Constructor, StringCollector
 export BNFRef, recognize, logReductions, loggingReductions
@@ -31,6 +31,25 @@ is otherwise unused.
                                  index=1, finish=length(input) + 1,
                                  context=nothing) =
     recognize(n, input, index, finish, context)
+
+
+function exhausted(input::AbstractString, index::Int, finish::Int)
+    (index > finish) || (index > length(input))
+end
+
+
+"""
+    EndOfInput()
+Succeed if input is exhausted.
+"""
+@bnfnode struct EndOfInput <: BNFNode
+end
+
+@trace trace_recognize function recognize(n::EndOfInput,
+                                          input::String, index::Int, finish::Int,
+                                          context::Any)
+    return exhausted(input, index, finish), nothing, index
+end
 
 
 """
@@ -89,21 +108,23 @@ end
 @trace trace_recognize function recognize(n::Alternatives,
                                           input::String, index::Int, finish::Int,
                                           context::Any)
-    bestv= nothing
+    alts_matched = false
+    bestv = nothing
     # If one of the alternatives is Empty, we want our match to
     # succeed.
     besti = index - 1
     for n1 in n.alternatives
         matched, v, i = recognize(n1, input, index, finish, context)
         if matched && i > besti
+            alts_matched = true
             bestv = v
             besti = i
         end
     end
-    if besti < index
+    if !alts_matched
         return false, nothing, index
     end
-    return true, bestv, besti
+    return alts_matched, bestv, besti
 end
 
 
@@ -118,7 +139,7 @@ end
 @trace trace_recognize function recognize(n::CharacterLiteral,
                                           input::String, index::Int, finish::Int,
                                           context::Any)
-    if index > min(finish, length(input))
+    if exhausted(input, index, finish)
         return false, nothing, index
     end
     c = input[index]
@@ -141,7 +162,7 @@ end
                                           input::String, index::Int, finish::Int,
                                           context::Any)
     e = index + length(n.str) - 1
-    if e > min(finish, length(input))
+    if exhausted(input, e, finish)
         return false, nothing, index
     end
     ss = SubString(input, index, e)
@@ -261,6 +282,9 @@ ignore_context(f) = (x, context) -> f(x)
                                           input::String, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize(n.lhs, input, index, finish, context)
+    if !matched
+        return false, v, i
+    end
     v2 = n.constructor(v, context)
     if logReductions
         @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
