@@ -2,6 +2,11 @@ using Logging
 using VectorLogging
 using NahaJuliaLib
 
+@testset "test flatten_to_string" begin
+    @test flatten_to_string(["abc", 'd', ["e", ['f', 'g', ['h'], 'i'], 'j']]) ==
+        "abcdefghij"
+end
+
 @testset "Recognize empty Sequence" begin
     @test recognize(Sequence(), "abcd") == (true, [], 1)
     @test recognize(CharacterLiteral('a'), "ab") == (true, 'a', 2)
