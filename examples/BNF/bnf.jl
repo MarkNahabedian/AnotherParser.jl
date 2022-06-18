@@ -243,7 +243,6 @@ DerivationRule(BootstrapBNFGrammar, "<character2>",
 bnf"""
  <rule-name>      ::= <letter> | <rule-name> <rule-char>
 """BNF
-# This gets a stack overflow error.
 DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                Alternatives(
                    BNFRef(BootstrapBNFGrammar, "<letter>"),
@@ -255,7 +254,7 @@ bnf"""
  <rule-name>      ::= <letter> <rule-name2>
  <rule-name2>     ::= "" | <rule-char> <rule-name2>
 """BNF
-# I believe the intent is that a <rule-name>must begin with a letter,
+# I believe the intent is that a <rule-name> must begin with a letter,
 # followed by any number of <rule-char>s.
 DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                Sequence(

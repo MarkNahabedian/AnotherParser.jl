@@ -36,6 +36,22 @@ end
         @test i == 5
         @test v == "abcd"
     end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<term>"),
+                                  "'abcd'")
+        @test matched == true
+        @test i == 7
+        @test v isa StringLiteral
+        @test v.str == "abcd"        
+    end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<term>"),
+                                  "<abcd>"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 7
+        @test v == BNFRef(:BootstrapBNFGrammar, "<abcd>")
+    end
+
     #=
     logger = VectorLogger()
     @eval(AnotherParser, trace_recognize = true)
