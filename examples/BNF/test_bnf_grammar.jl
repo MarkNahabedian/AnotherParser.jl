@@ -2,6 +2,9 @@ using Logging
 using VectorLogging
 using NahaJuliaLib
 
+include("node_equivalence.jl")
+include("test_nodeeq.jl")
+
 @testset "test flatten_to_string" begin
     @test flatten_to_string(["abc", 'd', ["e", ['f', 'g', ['h'], 'i'], 'j']]) ==
         "abcdefghij"
@@ -34,7 +37,7 @@ end
                                   "abcd")
         @test matched == true
         @test i == 5
-        @test v == "abcd"
+        @test nodeeq(v, "abcd")
     end
     let
         matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<term>"),
@@ -49,9 +52,34 @@ end
                                   "<abcd>"; context = :BootstrapBNFGrammar)
         @test matched == true
         @test i == 7
-        @test v == BNFRef(:BootstrapBNFGrammar, "<abcd>")
+        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
     end
-
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<list>"),
+                                  "<abcd>"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 7
+        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
+    end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<expression>"),
+                                  "<abcd>"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 7
+        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
+    end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<list>"),
+                                  "<abcd> 'efgh' 'i'"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 18
+        want = Sequence(BNFRef(:BootstrapBNFGrammar, "<abcd>"),
+                        StringLiteral("efgh"),
+                        StringLiteral("i"))
+        println(v, "\n", want)
+        @test nodeeq(v, want)
+    end
+    
     #=
     logger = VectorLogger()
     @eval(AnotherParser, trace_recognize = true)
