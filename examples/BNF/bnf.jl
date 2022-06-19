@@ -99,7 +99,7 @@ DerivationRule(BootstrapBNFGrammar, "<list>",
                        if list isa Sequence
                            Sequence(term, list.elements...)
                        else
-                           Sequence(term)
+                           Sequence(term, list)
                        end
                    end
 
