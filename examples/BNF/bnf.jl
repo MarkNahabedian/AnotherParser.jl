@@ -65,10 +65,10 @@ DerivationRule(BootstrapBNFGrammar, "<expression>",
                        if expression isa Alternatives
                            Alternatives(list, expression.alternatives...)
                        else
-                           Sequence(term)
+                           Alternatives(list, expression)
                        end
                    end
-                   
+
 
 bnf"""
  <line-end>       ::= <opt-whitespace> <EOL> | <line-end> <line-end>

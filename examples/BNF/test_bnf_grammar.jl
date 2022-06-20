@@ -76,9 +76,27 @@ end
         want = Sequence(BNFRef(:BootstrapBNFGrammar, "<abcd>"),
                         StringLiteral("efgh"),
                         StringLiteral("i"))
-        println(v, "\n", want)
         @test nodeeq(v, want)
     end
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<expression>"),
+                                  "<a1> | <a2>"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 12
+        want = Alternatives(BNFRef(:BootstrapB2NFGrammar, "<a1>"),
+                            BNFRef(:Bootstrap3NFGrammar, "<a2>"))
+        @test nodeeq(v, want)
+    end    
+    let
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<expression>"),
+                                  "<a1> | <a2> | <a3>"; context = :BootstrapBNFGrammar)
+        @test matched == true
+        @test i == 19
+        want = Alternatives(BNFRef(:BootstrapBNFGrammar, "<a1>"),
+                            BNFRef(:BootstrapBNFGrammar, "<a2>"),
+                            BNFRef(:BootstrapBNFGrammar, "<a3>"))
+        @test nodeeq(v, want)
+    end    
     
     #=
     logger = VectorLogger()
