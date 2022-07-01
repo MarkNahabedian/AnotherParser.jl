@@ -104,6 +104,13 @@ end
     end
 end
 
+@testset "test RegexNode" begin
+    matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123"; index = 2)
+    @test matched == true
+    @test i == 5
+    @test v.match == "bcd"
+end
+
 @testset "test Sequence" begin
     let
         matched, v, i = recognize(Sequence(CharacterLiteral('a'),
