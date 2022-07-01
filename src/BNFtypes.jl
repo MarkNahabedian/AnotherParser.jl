@@ -19,22 +19,26 @@ abstract type BNFNode end
 
 """
     recognize(::BNFNode, input::AbstractString; index, finish)
-Attempt to parse `input` as the specified `BNFNode`.
+Attempt to parse `input` as the specified `BNFNode`, starting at `index`.
 Return three values: whether the node matched the input,
-the value represented by the matched input,
-and the next index into input.
+the parsed value represented by the matched input,
+and the next index into `input`.
+`finish` is the index into `input` of the last character to be considered.
 The `context` argument is passed to constructor functions
 (see `Constructor` and `DerivationRule`) but
 is otherwise unused.
 """
 @trace trace_recognize recognize(n::BNFNode, input::AbstractString;
-                                 index=1, finish=length(input) + 1,
+                                 index=1, finish=lastindex(input),
                                  context=nothing) =
     recognize(n, input, index, finish, context)
 
 
+# True if input[index] would get out of bounds error.
+# in Julia, "1234"[4] is 4.  5 is out of bounds.
 function exhausted(input::AbstractString, index::Int, finish::Int)
-    (index > finish) || (index > length(input))
+    result = (index > finish) || (index > lastindex(input))
+    result
 end
 
 
@@ -111,7 +115,7 @@ end
     alts_matched = false
     bestv = nothing
     # If one of the alternatives is Empty, we want our match to
-    # succeed.
+    # succeed. WHAT ABOUT INFINITE RECURSION?
     besti = index - 1
     for n1 in n.alternatives
         matched, v, i = recognize(n1, input, index, finish, context)
@@ -161,18 +165,20 @@ end
 @trace trace_recognize function recognize(n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
-    e = index + length(n.str) - 1
-    if exhausted(input, e, finish)
+    # Don't match "" at the end of input:
+    if n.str == "" && exhausted(input, index, finish)
         return false, nothing, index
     end
-    ss = SubString(input, index, e)
+    end_inclusive = index + lastindex(n.str) - firstindex(n.str)
+    if exhausted(input, end_inclusive, finish)
+        return false, nothing, index
+    end
+    ss = SubString(input, index, end_inclusive)
     if n.str == ss
-        return true, ss, e + 1
+        return true, ss, index + length(n.str)
     end
     return false, nothing, index
 end
-
-
 
 """
     Constructor(node, constructor_function)
@@ -207,7 +213,7 @@ end
     end
     v2 = n.constructor(v, context)
     if logReductions
-        @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
+        @info "$index: $(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
     return true, v2, i
 end
@@ -287,7 +293,7 @@ ignore_context(f) = (x, context) -> f(x)
     end
     v2 = n.constructor(v, context)
     if logReductions
-        @info "$(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
+        @info "$index: constructor for $(n.name) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
     return matched, v2, i
 end
@@ -335,6 +341,7 @@ Base.getproperty(n::BNFRef, ::Val{:target}) =
     recognize(n.target, input, index, finish, context)
 end
 
+
 """
    StringCollector
 StringCollector returns the entire substrring of the input that
@@ -343,20 +350,6 @@ StringCollector returns the entire substrring of the input that
 @bnfnode struct StringCollector <: BNFNode
     node::BNFNode
 end
-
-
-"""
-# Why is this 0?
-
-SUBSTRING_SIZE = let
-    alpha = *((('a':'z'))...)
-    @allocated SubString(alpha, 3, 20)
-end
-
-# I was hoping to establish a threshhold to etermine if String or
-# SubString was cheaper
-"""
-
 
 @trace trace_recognize function recognize(n::StringCollector,
                                           input::AbstractString, index::Int, finish::Int,

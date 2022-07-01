@@ -1,6 +1,13 @@
 using AnotherParser
+using AnotherParser: exhausted
 using Test
 
+@testset "Test exhausted" begin
+    @test exhausted("12345", 5, 6) == false
+    @test exhausted("12345", 6, 7) == true
+    @test exhausted("12345", 3, 4) == false
+    @test exhausted("12345", 5, 4) == true
+end
 
 @testset "test EndOfInput" begin
     let
@@ -40,14 +47,61 @@ end
         @test matched == false
         @test i == 2
     end
+    let
+        matched, v, i = recognize(CharacterLiteral('z'),
+                                  "abzd"; index = 5)
+        @test matched == false
+        @test i == 5
+        #test v == nothing
+    end
+    let
+        matched, v, i = recognize(CharacterLiteral('z'),
+                                  "abzd"; index = 4, finish = 3)
+        @test matched == false
+        @test i == 4
+        #test v == nothing
+    end
 end
 
 @testset "test StringLiteral" begin
-    matched, v, i = recognize(StringLiteral("abc"),
-                              "abcd") # ; index = 2)
-    @test matched == true
-    @test i == 4
-    @test v == "abc"
+    let
+        matched, v, i = recognize(StringLiteral("abc"),
+                                  "abcd")
+        @test matched == true
+        @test i == 4
+        @test v == "abc"
+    end
+    let
+        matched, v, i = recognize(StringLiteral("abc"),
+                                  "abcd"; index = 2)
+        @test matched == false
+        @test i == 2
+        @test v == nothing
+    end
+    let
+        matched, v, i = recognize(StringLiteral("bcd"),
+                                  "abcd"; index = 2, finish = 3)
+        @test matched == false
+        @test i == 2
+        @test v == nothing
+    end
+    let
+        matched, v, i = recognize(StringLiteral(""),
+                                  "abcd")
+        @test matched == true
+        @test i == 1
+        @test v == ""
+    end
+    let
+        # Empty string should not match if input is exhausted:
+        r = recognize(StringLiteral(""),
+                      "abcd"; index=5)
+        matched, v, i = recognize(StringLiteral(""),
+                                  "abcd"; index=5)
+        @test matched == false
+        @test i == 5
+        @test v == nothing
+    end
 end
 
 @testset "test Sequence" begin
