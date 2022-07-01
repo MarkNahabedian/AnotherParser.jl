@@ -17,6 +17,7 @@ check_references(::Empty) = false
 check_references(::CharacterLiteral) = false
 check_references(::StringCollector) = false
 check_references(::StringLiteral) = false
+check_references(::RegexNode) = false
 check_references(::Constructor) = false
 
 check_references(dr::DerivationRule) = check_references(dr.lhs)
