@@ -1,5 +1,5 @@
 export BNFNode, EndOfInput, Empty, Sequence, Alternatives,  NonTerminal,
-    CharacterLiteral, StringLiteral
+    CharacterLiteral, StringLiteral, RegexNode
 export Constructor, StringCollector
 export BNFRef, recognize, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
@@ -172,6 +172,29 @@ end
     return false, nothing, index
 end
 
+
+"""
+    RegexNode <: BNFNode(re::Regex)
+Match the specified regular expression."
+So that the parser can access captures, The second return value
+of `recognize` is the RegexMatch object returned by `match`.
+"""
+@bnfnode struct RegexNode <: BNFNode
+    re::Regex
+end
+
+@trace trace_recognize function recognize(n::RegexNode,
+                                          input::AbstractString, index::Int, finish::Int,
+                                          context::Any)
+    m = match(n.re, input, index)
+    if m == nothing
+        return false, nothing, index
+    end
+    if m.offset != index
+        return false, nothing, index
+    end
+    return true, m, index + length(m.match)
+end
 
 
 """
