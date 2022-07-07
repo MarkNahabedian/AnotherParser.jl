@@ -40,6 +40,7 @@ function flatten_to_string(v)
     walk(::Nothing) = nothing
     walk(c::AbstractChar) = write(b, c)
     walk(s::AbstractString) = write(b, s)
+    walk(m::RegexMatch) = walk(m.match)
     function walk(v::Vector)
         for e in v
             walk(e)
