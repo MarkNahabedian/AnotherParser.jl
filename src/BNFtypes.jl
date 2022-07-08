@@ -165,10 +165,12 @@ end
 @trace trace_recognize function recognize(n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
+    #=
     # Don't match "" at the end of input:
     if n.str == "" && exhausted(input, index, finish)
         return false, nothing, index
     end
+    =#
     end_inclusive = index + lastindex(n.str) - firstindex(n.str)
     if exhausted(input, end_inclusive, finish)
         return false, nothing, index

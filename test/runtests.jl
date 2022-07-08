@@ -92,6 +92,7 @@ end
         @test i == 1
         @test v == ""
     end
+    #=
     let
         # Empty string should not match if input is exhausted:
         r = recognize(StringLiteral(""),
@@ -102,6 +103,7 @@ end
         @test i == 5
         @test v == nothing
     end
+    =#
 end
 
 @testset "test RegexNode" begin
