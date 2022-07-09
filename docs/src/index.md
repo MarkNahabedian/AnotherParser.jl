@@ -42,6 +42,37 @@ AnotherParser.recognize(::BNFNode, input::String; index, finish)
 AnotherParser.AllGrammars
 ```
 
+## Utility Functions
+
+```@docs
+AnotherParser.show_grammar
+AnotherParser.check_references
+```
+
+## Construction Utilities
+
+A grammar has little use recognizing its input if it does not also
+build d useful data structure from the abstract syntax tree.
+
+All BNFNode types should descrive what their `recognize` methods
+return as a value.  For `CharacterLiteral` and `StringLiteral` it is
+just the matched character or string.  For `RegexNode` it is the
+regularexpression'smatch object.  For `Alternatives` it is the value
+of whatever subexpression matched.  FOr `Sequence` it is a `Vector` of
+the matched values of the subexpressions.
+
+The `Constructor` BNFNode type can be used to wrap another BNFNode
+expression to massage the value that it returns.
+
+Also, `DerivationRule` can be assigned a `constructor` property.
+
+Various functions are provided to serve as constructors:
+
+```@docs
+AnotherParser.flatten_to_string
+```
+
+
 ## Example
 
 ```@example
@@ -58,12 +89,12 @@ DerivationRule(
     "text",
     Alternatives(
         Constructor(BNFRef(:example, "word"),
-                    x -> (x,)),
+                    ignore_context(x -> (x,)))  ,
         Constructor(
             Sequence(BNFRef(:example, "word"),
                      BNFRef(:example, "space"),
                      BNFRef(:example, "text")),
-            x -> (x[1], x[3]...))))
+            ignore_context(x -> (x[1], x[3]...)))))
 
 # Collapse the successive characters of a word into a string:
 DerivationRule(
