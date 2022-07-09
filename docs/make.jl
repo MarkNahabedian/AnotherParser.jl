@@ -4,6 +4,7 @@ Pkg.activate(".")
 
 Pkg.add(; url = "https://github.com/MarkNahabedian/NahaJuliaLib.jl")
 Pkg.add(; path = "..")
+Pkg.add("Documenter")
 
 using Documenter
 using AnotherParser
