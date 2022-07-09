@@ -2,8 +2,8 @@ export check_references
 
 """
     check_references(grammar)::Bool
-Warn of anyBNFRef nodes in the grammar that don't have a target.
-Return trueif there are any issues.
+Warn of any BNFRef nodes in the grammar that don't have a target.
+Return true if there are any issues.
 """
 function check_references(g::BNFGrammar)
     err= false
