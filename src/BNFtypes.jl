@@ -300,8 +300,7 @@ The rule can have a constructor function.
         p
     end
     DerivationRule(grammar_name::Symbol, name, lhs) =
-        DerivationRule(AllGrammars[grammar_name], name, lhs,
-                       ignore_context(identity))
+        DerivationRule(AllGrammars[grammar_name], name, lhs)
 end
 
 @njl_getprop DerivationRule
