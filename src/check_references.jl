@@ -19,6 +19,7 @@ check_references(::StringCollector) = false
 check_references(::StringLiteral) = false
 check_references(::RegexNode) = false
 check_references(::Constructor) = false
+check_references(::EndOfInput) = false
 
 check_references(dr::DerivationRule) = check_references(dr.lhs)
 
