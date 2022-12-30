@@ -1,4 +1,4 @@
-export BNFNode, EndOfInput, Empty, Sequence, Alternatives,  NonTerminal,
+export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat,  NonTerminal,
     CharacterLiteral, StringLiteral, RegexNode
 export Constructor, StringCollector
 export BNFRef, recognize, logReductions, loggingReductions
@@ -12,6 +12,7 @@ trace_recognize = false
 
 """
     BNFNode
+
 Abstract supertype for all structs that we use to implement a grammar.
 """
 abstract type BNFNode end
@@ -19,6 +20,7 @@ abstract type BNFNode end
 
 """
     recognize(::BNFNode, input::AbstractString; index, finish)
+
 Attempt to parse `input` as the specified `BNFNode`, starting at `index`.
 Return three values: whether the node matched the input,
 the parsed value represented by the matched input,
@@ -44,6 +46,7 @@ end
 
 """
     EndOfInput()
+
 Succeed if input is exhausted.
 """
 @bnfnode struct EndOfInput <: BNFNode
@@ -58,6 +61,7 @@ end
 
 """
     Empty()
+
 Succeed while matching nothing.
 """
 @bnfnode struct Empty <: BNFNode
@@ -72,6 +76,7 @@ end
 
 """
     Sequence(nodes...)
+
 Successively match each of nodes in turn.
 """
 @bnfnode struct Sequence <: BNFNode
@@ -100,6 +105,7 @@ end
 
 """
     Alternatives(nodes...)
+
 Matches any one element of `nodes`.
 """
 @bnfnode struct Alternatives <: BNFNode
@@ -133,7 +139,49 @@ end
 
 
 """
+    Repeat(n::BNFNode; min=0, max=typemax(Int))
+
+Matches repeated occurances of `n`.  The minimum and maxmum number of
+allowed matches can be specified.
+"""
+#= @bnfnode =# @with_kw struct Repeat <: BNFNode
+    node::BNFNode
+    min = 0
+    max = typemax(Int)
+
+    function Repeat(repeating::BNFNode; min=0, max=typemax(Int))
+        @assert min < max
+        new(repeating, min, max)
+    end
+
+end
+
+@trace trace_recognize function recognize(n::Repeat,
+                                          input::AbstractString, index::Int, finish::Int,
+                                          context::Any)
+    result = []
+    in = index
+    while true
+        if length(result) == n.max
+            break
+        end
+        matched, v, i = recognize(n.node, input, in, finish, context)                    
+        if !matched
+            break
+        end
+        push!(result, v)
+        in = i
+    end
+    if n.min > length(result)
+        return false, nothing, index
+    end
+    return true, result, in
+end
+
+
+"""
     CharacterLiteral(c)
+
 Matches the single character `c`.
 """
 @bnfnode struct CharacterLiteral <: BNFNode
@@ -156,6 +204,7 @@ end
 
 """
     StringLiteral(str)
+
 Matches the string `str`.
 """
 @bnfnode struct StringLiteral <: BNFNode
@@ -185,6 +234,7 @@ end
 
 """
     RegexNode <: BNFNode(re::Regex)
+
 Match the specified regular expression."
 So that the parser can access captures, The second return value
 of `recognize` is the RegexMatch object returned by `match`.
@@ -209,7 +259,8 @@ end
 
 """
     Constructor(node, constructor_function)
-Apply `constructor_function` to rhe result of recognizing `node`
+
+Apply `constructor_function` to the result of recognizing `node`
 and return that as the result.
 """
 @bnfnode struct Constructor <: BNFNode
@@ -248,6 +299,7 @@ end
 
 """
     BNFGrammar
+
 Represents a single grammar which can consist of a number of
 `DerivationRule`s.
 """
@@ -283,6 +335,7 @@ end
 
 """
     DerivationRule(grammar, rule_name, expression)
+
 Implements a single production named `name` in the specified `grammar`.
 One can include `expression` in other expressions using
 `BNFRef(grammar, rule_name)`.
@@ -339,6 +392,7 @@ end
 
 """
    BNFRef(grammar, name)
+
 delegates to the "left hand side" of the `DerivationRule` named `name`
 in `grammar`.
 """
@@ -370,6 +424,7 @@ end
 
 """
    StringCollector
+
 StringCollector returns the entire substrring of the input that
 @trace trace_recognize was recognized by its subexpression.
 """

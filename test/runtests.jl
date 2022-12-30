@@ -162,10 +162,41 @@ end
     end
 end
 
+@testset "test Repeat" begin
+    let
+        matched, v, i = recognize(Repeat(CharacterLiteral('a')),
+                                  "")
+        @test matched == true
+        @test v == []
+        @test i == 1
+    end
+    let
+        matched, v, i = recognize(Repeat(CharacterLiteral('a'); min=1),
+                                  "")
+        @test matched == false
+        @test v == nothing
+        @test i == 1
+    end
+    let
+        matched, v, i = recognize(Repeat(CharacterLiteral('a')),
+                                  "aaab")
+        @test matched == true
+        @test v == ['a', 'a', 'a']
+        @test i == 4
+    end
+    let
+        matched, v, i = recognize(Repeat(CharacterLiteral('a'); max=2),
+                                  "aaab")
+        @test matched == true
+        @test v == ['a', 'a']
+        @test i == 3
+    end
+end
+
 include("SemVerBNF.jl")
 include("test_note_BNFNode_location.jl")
 
-include("../examples/BNF/test_bnf_grammar.jl")
+# include("../examples/BNF/test_bnf_grammar.jl")
 
 @testset "AnotherParser.jl" begin
     # Write your tests here.
