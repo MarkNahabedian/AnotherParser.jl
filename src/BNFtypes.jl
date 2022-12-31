@@ -19,7 +19,7 @@ abstract type BNFNode end
 
 
 """
-    recognize(::BNFNode, input::AbstractString; index, finish)
+    recognize(::BNFNode, input::AbstractString; index, finish, context)
 
 Attempt to parse `input` as the specified `BNFNode`, starting at `index`.
 Return three values: whether the node matched the input,
@@ -339,7 +339,8 @@ end
 Implements a single production named `name` in the specified `grammar`.
 One can include `expression` in other expressions using
 `BNFRef(grammar, rule_name)`.
-The rule can have a constructor function.
+The rule can have a constructor function, which, if present, will
+be called with the recognized value, and the context.
 """
 @bnfnode mutable struct DerivationRule <: BNFNode
     grammar_name::Symbol

@@ -19,9 +19,11 @@ BNFGrammar
 
 The tree can be broken up into named `DerivationRule`s which can be
 referred to by name via `BNFRef`, and thus shared among different parts
-of the grammar..
+of the grammar and between grammars.
+
 ```@docs
 DerivationRule
+BNFRef
 ```
 
 
@@ -31,34 +33,37 @@ Order = [ :type ]
 Filter = t -> t <: AnotherParser.BNFNode
 ```
 
-Each BNFNode implements the `recognize` generic function which
+Each BNFNode implements the `recognize` generic function, which
 performs the actual parsing:
 
 ```@docs
-AnotherParser.recognize(::BNFNode, input::String; index, finish)
+recognize(n::BNFNode, input::AbstractString; index=1, finish=lastindex(input), context=nothing)
 ```
 
+
+All grammars that have been defined can be found in `AllGrammars`:
+
 ```@docs
-AnotherParser.AllGrammars
+AllGrammars
 ```
 
 ## Utility Functions
 
 ```@docs
-AnotherParser.show_grammar
-AnotherParser.check_references
+show_grammar
+check_references
 ```
 
 ## Construction Utilities
 
 A grammar has little use recognizing its input if it does not also
-build d useful data structure from the abstract syntax tree.
+build a useful data structure from the abstract syntax tree.
 
-All BNFNode types should descrive what their `recognize` methods
+All BNFNode types should describe what their `recognize` methods
 return as a value.  For `CharacterLiteral` and `StringLiteral` it is
 just the matched character or string.  For `RegexNode` it is the
-regularexpression'smatch object.  For `Alternatives` it is the value
-of whatever subexpression matched.  FOr `Sequence` it is a `Vector` of
+regular expression's match object.  For `Alternatives` it is the value
+of whatever subexpression matched.  For `Sequence` it is a `Vector` of
 the matched values of the subexpressions.
 
 The `Constructor` BNFNode type can be used to wrap another BNFNode
