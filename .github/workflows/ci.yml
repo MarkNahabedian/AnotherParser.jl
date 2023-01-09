@@ -1,58 +1,61 @@
 name: CI
 on:
-  pull_request:
-    branches:
-      - master
   push:
     branches:
-      - master
+      - main
+    tags: ['*']
+  pull_request:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    runs-on: ${{ matrix.platform }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
-        group:
-          - Core
-        julia-version: [ '1' ]
+        version:
+          - '1.8'
+          - 'nightly'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
-          version: ${{ matrix.julia-version }}
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v1
-      - uses: actions/cache@v1
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,examples/BNF
+          directories: src
       - uses: codecov/codecov-action@v2
         with:
           file: lcov.info
   docs:
     name: Documentation
     runs-on: ubuntu-latest
-    needs: test
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v2
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-docdeploy@latest
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1'
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # These are required so that the job can push the generated
-          # documentation to Github.  I used DocumenterTools.genkeys
-          # to get a key pair.  It provides a public key to put in the
-          # repository's Settings/Deploy keys.  It also generates a
-          # private key to put in the repository's
-          # Settings/Secrets/Repository Secrets.
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+      - run: |
+          julia --project=docs -e '
+            using Documenter: DocMeta, doctest
+            using AnotherParser
+            DocMeta.setdocmeta!(AnotherParser, :DocTestSetup, :(using AnotherParser); recursive=true)
+            doctest(AnotherParser)'
