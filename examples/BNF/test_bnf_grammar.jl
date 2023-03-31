@@ -5,19 +5,31 @@ using NahaJuliaLib
 include("node_equivalence.jl")
 include("test_nodeeq.jl")
 
-function showingTraces(body, mod::Module, vbl::Symbol, show::Bool)
+function showingTraces(body, mod::Module, vbl::Symbol, showtraces::Bool)
+    if !showtraces
+        return body()
+    end
     setv(new_value) = Base.eval(mod, :($vbl = $new_value))
     old = Base.eval(mod, vbl)
-    logger = VectorLogger()
+    logfile = tempname()
+    logformat = SerializationLogFileFormat()
+    println("***** log file: $logfile")
+    # logger = VectorLogger()
     result = nothing
     try
-        setv(show)
-        with_logger(logger) do
-            result = body()
+        setv(showtraces)
+        FileLogger(logfile, logformat) do logger
+            with_logger(logger) do
+                @info "Logging."
+                result = body()
+            end
         end
     finally
         setv(old)
-        traces = analyze_traces(logger)
+        traces = LogFileReader(logfile, logformat) do logreader
+            analyze_traces(logreader)
+        end
+        println("*****", length(traces))
         for trace in traces
             show_trace(trace)
         end
@@ -68,14 +80,12 @@ BNFGrammar(:TestGrammar)
         @test v == "abcd"
     end
     let
-        showingTraces(AnotherParser, :trace_recognize, false) do
-            # loggingReductions() do
-            matched, v, i = recognize(grammar["<rule-name>"],
-                                      "abcd")
-            @test matched == true
-            @test i == 5
-            @test v == "abcd"
-        end
+        # loggingReductions() do
+        matched, v, i = recognize(grammar["<rule-name>"],
+                                  "abcd")
+        @test matched == true
+        @test i == 5
+        @test v == "abcd"
     end
     let
         matched, v, i = recognize(grammar["<term>"],
@@ -142,14 +152,12 @@ BNFGrammar(:TestGrammar)
     # Trying to hunt down the infinite recursion problem at the end of <rule>.
     # These next two blocks show that the empty tail in <opt-whitespace> is safe.
     let
-        showingTraces(AnotherParser, :trace_recognize, false) do
-            matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
-                                      "  ";
-                                      context = :TestGrammar)
-            @test matched == true
-            @test i == 3
-            @test v== nothing
-        end
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+                                  "  ";
+                                  context = :TestGrammar)
+        @test matched == true
+        @test i == 3
+        @test v== nothing
     end
     let
         @info("<opt-whitespace> empty")
@@ -160,14 +168,18 @@ BNFGrammar(:TestGrammar)
         @test i == 1
         @test v== nothing
     end
-#= STACK OVERFLOW:
     let
         @info("<opt-rule>")
-        # loggingReductions() do
+#=
+        showingTraces(AnotherParser, :trace_recognize, true) do
             matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<rule>"),
                                       "<xs> ::= 'x' | 'x' <xs>\n";
                                       context = :TestGrammar)
-        # end
+        end
+=#
+        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<rule>"),
+                                  "<xs> ::= 'x' | 'x' <xs>\n";
+                                  context = :TestGrammar)
         @test matched == true
         @test i == 24
         want = DerivationRule(:TestGrammar, "<xs>",
@@ -176,6 +188,5 @@ BNFGrammar(:TestGrammar)
                                                     BNFRef(:TestGrammar, "<xs>"))))
         @test nodeeq(v, want)
     end
-=#
 end
 

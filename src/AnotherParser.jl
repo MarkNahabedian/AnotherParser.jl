@@ -4,6 +4,7 @@ using PrettyPrint
 using Parameters
 
 include("note_BNFNode_location.jl")
+include("parser.jl")
 include("BNFtypes.jl")
 include("check_references.jl")
 include("pprint.jl")
