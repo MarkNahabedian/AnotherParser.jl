@@ -33,6 +33,7 @@ end
 
 """
     flatten_to_string(v)
+
 Flatten a tail recursive Vector of characters to a string.
 """
 function flatten_to_string(v)
