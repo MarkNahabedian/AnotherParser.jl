@@ -2,6 +2,7 @@ export check_references
 
 """
     check_references(grammar)::Bool
+
 Warn of any BNFRef nodes in the grammar that don't have a target.
 Return true if there are any issues.
 """
