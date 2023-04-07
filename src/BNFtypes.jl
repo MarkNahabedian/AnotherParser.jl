@@ -18,6 +18,8 @@ Abstract supertype for all structs that we use to implement a grammar.
 """
 abstract type BNFNode end
 
+Base.hash(n::BNFNode, h::UInt64) = hash(n.uid, h)
+
 
 """
     recognize(::BNFNode, input::AbstractString; index, finish, context)
@@ -33,8 +35,9 @@ is otherwise unused.
 """
 @trace trace_recognize recognize(n::BNFNode, input::AbstractString;
                                  index=1, finish=lastindex(input),
+                                 parser=Parser(),
                                  context=nothing) =
-    recognize(Parser(), n, input, index, finish, context)
+    recognize(parser, n, input, index, finish, context)
 
 
 # True if input[index] would get out of bounds error.
