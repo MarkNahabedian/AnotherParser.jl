@@ -1,6 +1,9 @@
 TODO:
 
-Maybe define a BNF for BNFs using our BNFNodes
+DerivationRule recognize method should note start index so it can pass
+it and the end index as additional arguments to the constructor
+function so that the entire matched input is available to the
+constructor.  With this, we will no longer need StringCollector.
 
 syntactic sugar for BNF by transforming Julia Exprs:
 
