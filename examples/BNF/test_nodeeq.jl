@@ -9,7 +9,7 @@
     @test nodeeq(StringLiteral("foo"),
                  StringLiteral("foo"))
     @test !nodeeq(StringLiteral("foo"),
-                 StringLiteral("bar"))
+                  StringLiteral("bar"))
     @test nodeeq(Sequence(StringLiteral("foo"),
                           CharacterLiteral('a')),
                  Sequence(StringLiteral("foo"),
