@@ -148,13 +148,13 @@ end
 Matches repeated occurances of `n`.  The minimum and maxmum number of
 allowed matches can be specified.
 """
-#= @bnfnode =# @with_kw struct Repeat <: BNFNode
+@bnfnode struct Repeat <: BNFNode
     node::BNFNode
-    min = 0
-    max = typemax(Int)
+    min
+    max
 
     function Repeat(repeating::BNFNode; min=0, max=typemax(Int))
-        @assert min < max
+        @assert min <= max
         new(repeating, min, max)
     end
 
@@ -409,7 +409,7 @@ in `grammar`.
         new(grammar_name, name)
 
     BNFRef(grammar::BNFGrammar, name::String) =
-        BNFRef(grammar.name, name)
+        new(grammar.name, name)
 end
 
 @njl_getprop BNFRef
