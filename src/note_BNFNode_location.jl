@@ -27,6 +27,44 @@ function grok_struct(def::Expr)
     return mutable, nameexp, fields
 end
 
+let
+    next_id = 1
+    global function next_node_id(name)
+        x = next_id
+        next_id += 1
+        "$(name)_$x"
+    end
+end
+
+function rewrite_constructor(constructor::Expr, add_source::Bool)::Expr
+    s = splitdef(constructor)
+    if add_source
+        opt = findfirst(s[:args]) do a
+            isexpr(a, :kw)
+        end
+        if opt === nothing
+            opt = max(1, length(s[:args]))
+        end
+        insert!(s[:args], opt,
+                :(source::Union{Nothing, LineNumberNode}))
+    end
+    s[:body] = postwalk(s[:body]) do e
+        if iscall(e, :new)
+            Expr(:call, :new,
+                 Expr(:call, :next_node_id, find_name(s[:name])),
+                 if add_source
+                     :source
+                 else
+                     nothing
+                 end,
+                 e.args[2:end]...)
+        else
+            e
+        end
+    end
+    combinedef(s)
+end
+
 function rewrite_struct(def::Expr)::Expr
     mutable, nameexp, f = grok_struct(def)
     fields = []
@@ -39,50 +77,29 @@ function rewrite_struct(def::Expr)::Expr
             push!(fields, e)
         end
     end
+    name = find_name(nameexp)
     if length(constructors) == 0
         # Add default constructor
-        name = find_name(nameexp)
         args = map(find_name, fields)
         push!(constructors,
               :(function $name($(args...))
                     new($(args...))
                 end))
     end
+    # Modify the constructors to initialize the :uid and :source
+    # fields:
     constructors2 = []
     for e in constructors
-        # default source argument
-        push!(constructors2,
-              postwalk(e) do e
-                  if iscall(e, :new)
-                      # Default the source argument when calling new
-                      # in existing methods:
-                      Expr(:call, :new, nothing, e.args[2:end]...)
-                  else
-                      e
-                  end
-              end)
+        # default uid and source arguments
+        push!(constructors2, rewrite_constructor(e, false))
         # pass through source argument
-        constructorpattern = postwalk(rmlines, Meta.parse(
-            "function fname_(fargs__) fbody__ end"))
-        bindings2 = MacroTools.match(constructorpattern, e)
-        push!(constructors2,
-              :(function $(bindings2[:fname])(source::Union{Nothing, LineNumberNode},
-                                              $(bindings2[:fargs]...))
-                    $(map(bindings2[:fbody]) do e
-                          postwalk(e) do e
-                              if iscall(e, :new)
-                                  Expr(:call, :new, :source, e.args[2:end]...)
-                              else
-                                  e
-                              end
-                          end
-                      end...)
-                end))
+        push!(constructors2, rewrite_constructor(e, true))
     end
     Expr(:macrocall, Expr(:., :Base, QuoteNode(Symbol("@__doc__"))),
          nothing, # LineNumberNode
          Expr(:struct, mutable, nameexp,
               Expr(:block,
+                   :uid,
                    Expr(:(::), :source,
                         Expr(:curly, :Union, Nothing, LineNumberNode)),
                    fields...,
@@ -98,12 +115,10 @@ macro bnfnode(exp)
     mname = Symbol("@$name")
     source = __source__
     @assert source isa LineNumberNode
-
     quote
-        $(rewrite_struct(exp))
+        $(esc(rewrite_struct(exp)))
 
         export $(esc(name)), $(esc(mname))
-
         macro $(esc(name))(args...)
             Expr(:call, $(esc(name)), $(esc(source)), args...)
         end
