@@ -1,3 +1,4 @@
+export Parser
 
 struct Parser
     recognize1_history::Dict
@@ -6,7 +7,7 @@ struct Parser
 end
 
 function recognize1(p::Parser, n, input, index, finish, context)
-    key = (n,input, index)
+    key = (n.uid, input, index)
     if haskey(p.recognize1_history, key)
         return false, nothing, index
     end
