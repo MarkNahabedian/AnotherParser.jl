@@ -138,7 +138,7 @@ end
     if !alts_matched
         return false, nothing, index
     end
-    return alts_matched, bestv, besti
+    return true, bestv, besti
 end
 
 
