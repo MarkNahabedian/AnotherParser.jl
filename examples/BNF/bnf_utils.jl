@@ -18,7 +18,8 @@ end
 
 
 """
-Parse `str` as BNF and add those productions to the grammar named `grammar_name`.
+Parse `str` as BNF and add those productions to the grammar named
+`grammar_name`.
 """
 macro bnf_str(str, grammar_name)
     # HOW TO CAPTURE SOURCE LOCATION? SEE cl_str.
