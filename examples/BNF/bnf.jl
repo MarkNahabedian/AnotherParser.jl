@@ -70,15 +70,25 @@ DerivationRule(BootstrapBNFGrammar, "<expression>",
                    end
 
 
+#=
+This rule from the grammar on Wikipedia, causes infinite recursion
+so I've rewritten it:
 bnf"""
  <line-end>       ::= <opt-whitespace> <EOL> | <line-end> <line-end>
 """BNF
+=#
+bnf"""
+ <line-end1>       ::= <opt-whitespace> <EOL>
+ <line-end>        ::= <line-end1> | <line-end1> <line-end>
+"""BNF
+DerivationRule(BootstrapBNFGrammar, "<line-end1>",
+               Sequence(BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
+                        BNFRef(BootstrapBNFGrammar, "<EOL>")))
 DerivationRule(BootstrapBNFGrammar, "<line-end>",
                Alternatives(
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                            BNFRef(BootstrapBNFGrammar, "<EOL>")),
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<line-end>"),
-                            BNFRef(BootstrapBNFGrammar, "<line-end>"),)))
+                   BNFRef(BootstrapBNFGrammar, "<line-end1>"),
+                   Sequence(BNFRef(BootstrapBNFGrammar, "<line-end1>"),
+                            BNFRef(BootstrapBNFGrammar, "<line-end>"))))
 
 bnf"""
  <list>           ::= <term> | <term> <opt-whitespace> <list>
