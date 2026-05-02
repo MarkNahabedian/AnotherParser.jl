@@ -101,7 +101,7 @@ BNFGrammar(:TestGrammar)
                                   context = :TestGrammar)
         @test matched == true
         @test i == 7
-        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
+        @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
         matched, v, i = recognize(grammar["<list>"],
@@ -109,14 +109,14 @@ BNFGrammar(:TestGrammar)
                                   context = :TestGrammar)
         @test matched == true
         @test i == 7
-        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
+        @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
         matched, v, i = recognize(grammar["<expression>"],
                                   "<abcd>"; context = :TestGrammar)
         @test matched == true
         @test i == 7
-        @test nodeeq(v, BNFRef(:BootstrapBNFGrammar, "<abcd>"))
+        @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
         matched, v, i = recognize(grammar["<list>"],
@@ -124,13 +124,13 @@ BNFGrammar(:TestGrammar)
                                   context = :TestGrammar)
         @test matched == true
         @test i == 18
-        want = Sequence(BNFRef(:BootstrapBNFGrammar, "<abcd>"),
+        want = Sequence(BNFRef(:TestGrammar, "<abcd>"),
                         StringLiteral("efgh"),
                         StringLiteral("i"))
         @test nodeeq(v, want)
     end
     let
-        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<expression>"),
+        matched, v, i = recognize(BNFRef(grammar.name, "<expression>"),
                                   "<a1> | <a2>"; context = :TestGrammar)
         @test matched == true
         @test i == 12
@@ -139,20 +139,20 @@ BNFGrammar(:TestGrammar)
         @test nodeeq(v, want)
     end    
     let
-        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<expression>"),
+        matched, v, i = recognize(BNFRef(grammar.name, "<expression>"),
                                   "<a1> | <a2> | <a3>";
                                   context = :TestGrammar)
         @test matched == true
         @test i == 19
-        want = Alternatives(BNFRef(:BootstrapBNFGrammar, "<a1>"),
-                            BNFRef(:BootstrapBNFGrammar, "<a2>"),
-                            BNFRef(:BootstrapBNFGrammar, "<a3>"))
+        want = Alternatives(BNFRef(grammar.name, "<a1>"),
+                            BNFRef(grammar.name, "<a2>"),
+                            BNFRef(grammar.name, "<a3>"))
         @test nodeeq(v, want)
     end    
     # Trying to hunt down the infinite recursion problem at the end of <rule>.
     # These next two blocks show that the empty tail in <opt-whitespace> is safe.
     let
-        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+        matched, v, i = recognize(BNFRef(grammar.name, "<opt-whitespace>"),
                                   "  ";
                                   context = :TestGrammar)
         @test matched == true
@@ -161,7 +161,7 @@ BNFGrammar(:TestGrammar)
     end
     let
         @info("<opt-whitespace> empty")
-        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+        matched, v, i = recognize(BNFRef(grammar.name, "<opt-whitespace>"),
                                   "";
                                   context = :TestGrammar)
         @test matched == true
@@ -170,22 +170,16 @@ BNFGrammar(:TestGrammar)
     end
     let
         @info("<opt-rule>")
-#=
-        showingTraces(AnotherParser, :trace_recognize, true) do
-            matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<rule>"),
-                                      "<xs> ::= 'x' | 'x' <xs>\n";
-                                      context = :TestGrammar)
-        end
-=#
-        matched, v, i = recognize(BNFRef(:BootstrapBNFGrammar, "<rule>"),
+        matched, v, i = recognize(BNFRef(grammar.name, "<rule>"),
                                   "<xs> ::= 'x' | 'x' <xs>\n";
                                   context = :TestGrammar)
         @test matched == true
-        @test i == 24
+        @test i == 25
         want = DerivationRule(:TestGrammar, "<xs>",
                               Alternatives(StringLiteral("x"),
                                            Sequence(StringLiteral("x"),
-                                                    BNFRef(:TestGrammar, "<xs>"))))
+                                                    BNFRef(:TestGrammar, "<xs>")));
+                              add_to_grammar=false)
         @test nodeeq(v, want)
     end
 end
