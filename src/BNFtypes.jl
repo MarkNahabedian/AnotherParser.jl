@@ -1,10 +1,10 @@
 export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat,  NonTerminal,
     CharacterLiteral, StringLiteral, RegexNode
 export Constructor, StringCollector
-export BNFRef, recognize, logReductions, loggingReductions
+export BNFRef, recognize, pretty, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
-export ignore_context
+export ignore_context, walk_nodes, print_uid_index
 
 using NahaJuliaLib
 
@@ -19,6 +19,14 @@ Abstract supertype for all structs that we use to implement a grammar.
 abstract type BNFNode end
 
 Base.hash(n::BNFNode, h::UInt64) = hash(n.uid, h)
+
+
+"""
+    pretty(::BNFNode)
+
+Return a human-readable string that describes the node.
+"""
+function pretty end
 
 
 """
@@ -56,6 +64,8 @@ Succeed if input is exhausted.
 @bnfnode struct EndOfInput <: BNFNode
 end
 
+pretty(::EndOfInput) = "EndOfInput()"
+
 @trace trace_recognize function recognize(p::Parser, n::EndOfInput,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -71,6 +81,8 @@ Succeed while matching nothing.
 @bnfnode struct Empty <: BNFNode
 end
 
+pretty(::Empty) = "Empty()"
+
 @trace trace_recognize function recognize(p::Parser, n::Empty,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -84,11 +96,13 @@ end
 Successively match each of nodes in turn.
 """
 @bnfnode struct Sequence <: BNFNode
-    elements::Tuple{Vararg{<:BNFNode}}
+    elements::Tuple{Vararg{BNFNode}}
 
     Sequence(elements...) = new(elements)
     Sequence(elements::Tuple) = new(elements)
 end
+
+pretty(n::Sequence) = "Sequence(" * join(map(pretty, n.elements), " ") * ")"
 
 @trace trace_recognize function recognize(p::Parser, n::Sequence,
                                           input::AbstractString, index::Int, finish::Int,
@@ -113,15 +127,19 @@ end
 Matches any one element of `nodes`.
 """
 @bnfnode struct Alternatives <: BNFNode
-    alternatives::Tuple{Vararg{<:BNFNode}}
+    alternatives::Tuple{Vararg{BNFNode}}
 
     Alternatives(alternatives...) = new(alternatives)
     Alternatives(alternatives::Tuple) = new(alternatives)
 end
 
+pretty(n::Alternatives) = "Alternatives(" * join(map(pretty, n.alternatives), " ") * ")"
+
 @trace trace_recognize function recognize(p::Parser, n::Alternatives,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
+    # Greedy match: choose the alternative that consumes the most
+    # input.
     alts_matched = false
     bestv = nothing
     # If one of the alternatives is Empty, we want our match to
@@ -160,6 +178,8 @@ allowed matches can be specified.
 
 end
 
+pretty(n::Repeat) = "Repeat(" * pretty(n.node) * ")"
+
 @trace trace_recognize function recognize(p::Parser, n::Repeat,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -192,6 +212,8 @@ Matches the single character `c`.
     character::Char
 end
 
+pretty(n::CharacterLiteral) = "CharacterLiteral('" * n.character * "')"
+
 @trace trace_recognize function recognize(p::Parser, n::CharacterLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -214,6 +236,8 @@ Matches the string `str`.
 @bnfnode struct StringLiteral <: BNFNode
     str::AbstractString
 end
+
+pretty(n::StringLiteral) = "StringLiteral(\"" * n.str * "\")"
 
 @trace trace_recognize function recognize(p::Parser, n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
@@ -247,6 +271,8 @@ of `recognize` is the RegexMatch object returned by `match`.
     re::Regex
 end
 
+pretty(n::RegexNode) = "RegexNode(" * n.re, ")"
+
 @trace trace_recognize function recognize(p::Parser, n::RegexNode,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -272,6 +298,7 @@ and return that as the result.
     constructor
 end
 
+pretty(::Constructor) = "Constructor()"
 
 logReductions = false
 
@@ -310,21 +337,28 @@ Represents a single grammar which can consist of a number of
 struct BNFGrammar
     name::Symbol
     derivations # ::Dict{String, DerivationRule}
+    uid_index
 
     function BNFGrammar(name::Symbol)
         g = new(name,
                 # Dict{String, DerivationRule}()
+                Dict(),
                 Dict())
         AllGrammars[g.name] = g
         g
     end
 end
 
-Base.haskey(grammar::BNFGrammar, rule::String) =
-    haskey(grammar.derivations, rule)
+Base.haskey(grammar::BNFGrammar, key::String) =
+    haskey(grammar.derivations, key) || haskey(grammar.uid_index, key)
 
-Base.getindex(grammar::BNFGrammar, rule::String) =
-    grammar.derivations[rule]
+function Base.getindex(grammar::BNFGrammar, key::String)
+    if haskey(grammar.derivations, key)
+        grammar.derivations[key]
+    else
+        grammar.uid_index[key]
+    end
+end
 
 
 """
@@ -352,13 +386,15 @@ be called with the recognized value, and the context.
     lhs::BNFNode
     constructor
 
-    function DerivationRule(grammar::BNFGrammar, name, lhs)
+    function DerivationRule(grammar::BNFGrammar, name, lhs; add_to_grammar=true)
         p = new(grammar.name, name, lhs, ignore_context(identity))
-        add_derivation(p)
+        if add_to_grammar
+            add_derivation(p)
+        end
         p
     end
-    DerivationRule(grammar_name::Symbol, name, lhs) =
-        DerivationRule(AllGrammars[grammar_name], name, lhs)
+    DerivationRule(grammar_name::Symbol, name, lhs; add_to_grammar=true) =
+        DerivationRule(AllGrammars[grammar_name], name, lhs; add_to_grammar)
 end
 
 @njl_getprop DerivationRule
@@ -367,6 +403,8 @@ Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
     return AllGrammars[p.grammar_name]
 
 ignore_context(f) = (x, context) -> f(x)
+
+pretty(n::DerivationRule) = "DerivationRule(" * n.name * ")"
 
 @trace trace_recognize function recognize(p::Parser, n::DerivationRule,
                                           input::AbstractString, index::Int, finish::Int,
@@ -392,6 +430,10 @@ function add_derivation(grammar::BNFGrammar, derivation::DerivationRule)
             "The nonterminal $(derivation.name) is already defined in BNFGrammar $(grammar.name)."))
     end
     grammar.derivations[derivation.name] = derivation
+    walk_nodes(derivation) do node
+        grammar.uid_index[node.uid] = node
+    end
+    derivation
 end
 
 
@@ -420,6 +462,8 @@ Base.getproperty(p::BNFRef, ::Val{:grammar}) =
 Base.getproperty(n::BNFRef, ::Val{:target}) =
     AllGrammars[n.grammar_name][n.name]
 
+pretty(n::BNFRef) = "BNFRef(" * n.name * ")"
+
 @trace trace_recognize function recognize(p::Parser, n::BNFRef,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -437,6 +481,8 @@ StringCollector returns the entire substrring of the input that
     node::BNFNode
 end
 
+pretty(n::StringCollector) = "StringCollector(" * pretty(n.node) * ")"
+
 @trace trace_recognize function recognize(p::Parser, n::StringCollector,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -446,5 +492,61 @@ end
         return false, v, i
     end
     return true, SubString(input, start, i - 1), i
+end
+
+
+"""
+    walk_nodes(f, node)
+
+Applies `f` to each node in the node tree that descends from `node`.
+"""
+function walk_nodes(f, node::BNFNode)
+    f(node)
+end
+
+function walk_nodes(f, node::BNFGrammar)
+    for d in values(node.derivations)
+        walk_nodes(f, d)
+    end
+end
+
+function walk_nodes(f, node::DerivationRule)
+    f(node)
+    walk_nodes(f, node.lhs)
+end
+
+function walk_nodes(f, node::Sequence)
+    f(node)
+    for e in node.elements
+        walk_nodes(f, e)
+    end
+end
+
+function walk_nodes(f, node::Alternatives)
+    f(node)
+    for alt in node.alternatives
+        walk_nodes(f, alt)
+    end
+end
+
+function walk_nodes(f, node::StringCollector)
+    f(node)
+    f(node.node)
+end
+
+function walk_nodes(f, node::Repeat)
+    f(node)
+    walk_nodes(f, node.node)
+end
+
+function walk_nodes(f, node::Constructor)
+    f(node)
+    walk_nodes(f, node.node)
+end
+
+function print_uid_index(grammar::BNFGrammar)
+    for (k, v) in grammar.uid_index
+        println("\n", k, "\n\t", v)
+    end
 end
 
