@@ -160,7 +160,6 @@ BNFGrammar(:TestGrammar)
         @test v== nothing
     end
     let
-        @info("<opt-whitespace> empty")
         matched, v, i = recognize(BNFRef(grammar.name, "<opt-whitespace>"),
                                   "";
                                   context = :TestGrammar)
@@ -169,7 +168,6 @@ BNFGrammar(:TestGrammar)
         @test v== nothing
     end
     let
-        @info("<opt-rule>")
         matched, v, i = recognize(BNFRef(grammar.name, "<rule>"),
                                   "<xs> ::= 'x' | 'x' <xs>\n";
                                   context = :TestGrammar)
