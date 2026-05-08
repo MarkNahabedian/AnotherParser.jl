@@ -12,16 +12,6 @@ trace_recognize = false
 
 
 """
-    BNFNode
-
-Abstract supertype for all structs that we use to implement a grammar.
-"""
-abstract type BNFNode end
-
-Base.hash(n::BNFNode, h::UInt64) = hash(n.uid, h)
-
-
-"""
     pretty(::BNFNode)
 
 Return a human-readable string that describes the node.
@@ -102,7 +92,9 @@ Successively match each of nodes in turn.
     Sequence(elements::Tuple) = new(elements)
 end
 
-pretty(n::Sequence) = "Sequence(" * join(map(pretty, n.elements), " ") * ")"
+pretty(n::Sequence) = *("Sequence(",
+                        join(map(pretty, n.elements), " "),
+                        ")")
 
 @trace trace_recognize function recognize(p::Parser, n::Sequence,
                                           input::AbstractString, index::Int, finish::Int,
@@ -133,7 +125,9 @@ Matches any one element of `nodes`.
     Alternatives(alternatives::Tuple) = new(alternatives)
 end
 
-pretty(n::Alternatives) = "Alternatives(" * join(map(pretty, n.alternatives), " ") * ")"
+pretty(n::Alternatives) = *("Alternatives(",
+                            join(map(pretty, n.alternatives), " "),
+                            ")")
 
 @trace trace_recognize function recognize(p::Parser, n::Alternatives,
                                           input::AbstractString, index::Int, finish::Int,
@@ -178,7 +172,9 @@ allowed matches can be specified.
 
 end
 
-pretty(n::Repeat) = "Repeat(" * pretty(n.node) * ")"
+pretty(n::Repeat) = *("Repeat(",
+                      pretty(n.node),
+                      ")")
 
 @trace trace_recognize function recognize(p::Parser, n::Repeat,
                                           input::AbstractString, index::Int, finish::Int,
@@ -212,7 +208,9 @@ Matches the single character `c`.
     character::Char
 end
 
-pretty(n::CharacterLiteral) = "CharacterLiteral('" * n.character * "')"
+pretty(n::CharacterLiteral) = *("CharacterLiteral('",
+                                n.character,
+                                "')")
 
 @trace trace_recognize function recognize(p::Parser, n::CharacterLiteral,
                                           input::AbstractString, index::Int, finish::Int,
@@ -237,7 +235,9 @@ Matches the string `str`.
     str::AbstractString
 end
 
-pretty(n::StringLiteral) = "StringLiteral(\"" * n.str * "\")"
+pretty(n::StringLiteral) = *("StringLiteral(\"",
+                             n.str,
+                             "\")")
 
 @trace trace_recognize function recognize(p::Parser, n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
@@ -271,7 +271,9 @@ of `recognize` is the RegexMatch object returned by `match`.
     re::Regex
 end
 
-pretty(n::RegexNode) = "RegexNode(" * n.re, ")"
+pretty(n::RegexNode) = *("RegexNode(",
+                         string(n.re),
+                         ")")
 
 @trace trace_recognize function recognize(p::Parser, n::RegexNode,
                                           input::AbstractString, index::Int, finish::Int,
@@ -404,7 +406,11 @@ Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
 
 ignore_context(f) = (x, context) -> f(x)
 
-pretty(n::DerivationRule) = "DerivationRule(" * n.name * ")"
+pretty(n::DerivationRule) = *("DerivationRule(",
+                              n.name,
+                              " ::= ",
+                              pretty(n.lhs),
+                              ")")
 
 @trace trace_recognize function recognize(p::Parser, n::DerivationRule,
                                           input::AbstractString, index::Int, finish::Int,
