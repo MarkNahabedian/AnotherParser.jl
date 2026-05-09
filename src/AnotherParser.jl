@@ -15,6 +15,7 @@ Base.hash(n::BNFNode, h::UInt64) = hash(n.uid, h)
 
 include("note_BNFNode_location.jl")
 include("parser.jl")
+include("debug_parser.jl");
 include("BNFtypes.jl")
 include("check_references.jl")
 include("pprint.jl")
