@@ -16,7 +16,13 @@ mutable struct Parser
     Parser() = new(1, Dict())
 end
 
-function recognize1(p::Parser, n, input, index, finish, context)
+function recognize1(p::Parser, n::BNFNode, input::AbstractString;
+                    index = 1, finish = length(input), context = nothing)
+    recognize1(p, n, input, index, finish, context)
+end
+
+function recognize1(p::Parser, n::BNFNode, input::AbstractString,
+                    index::Int, finish::Int, context)
     dbg = n.uid in DEBUG_BNFNODES
     p.call_counter += 1
     call_counter = p.call_counter
@@ -27,14 +33,15 @@ function recognize1(p::Parser, n, input, index, finish, context)
     key = (n.uid, input, index)
     # We should be caching the result
     if haskey(p.recognize1_cache, key)
+        result = p.recognize1_cache[key]
         if dbg
-            @info "recognize1" call_counter cacheed_result = p.recognize1_cache[key]
+            @info "recognize1" call_counter node index = result[3] cacheed_result = result
         end
-        return p.recognize1_cache[key]
+        return result
     end
     matched, v, i = recognize(p, n, input, index, finish, context)
     if matched == true && i == index
-        p.recognize1_cache[key] = true
+        p.recognize1_cache[key] = (matched, v, i)
     end
     if dbg
         @info "recognize1" call_counter node index "returning" matched v i
@@ -42,3 +49,4 @@ function recognize1(p::Parser, n, input, index, finish, context)
     p.recognize1_cache[key] = (matched, v, i)
     return matched, v, i
 end
+
