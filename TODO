@@ -1,5 +1,12 @@
 TODO:
 
+Use SubString for values of CharacterLiteral, StringLiteral and
+RegexNode.
+
+How can bnf_str pass __source__ to the DerivationRule constructor?
+More complicated context argument?  There are DerivationRule
+construtor methods that take source as their third argument.
+
 DerivationRule recognize method should note start index so it can pass
 it and the end index as additional arguments to the constructor
 function so that the entire matched input is available to the
@@ -7,7 +14,7 @@ constructor.  With this, we will no longer need StringCollector.
 
 syntactic sugar for BNF by transforming Julia Exprs:
 
-str macro for ref.  Need contect to get dictionary
+str macro for ref.  Need context to get dictionary
 
 ::= for non-terminal definitions
 
