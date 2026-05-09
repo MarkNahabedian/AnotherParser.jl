@@ -1,7 +1,7 @@
 # AnotherParser.jl
 
-AnotherParser allows one to implement a parser given a
-hierarchical grammar expressed as
+AnotherParser allows one to implement a recursive descent parser given
+a hierarchical grammar expressed as
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
 **AnotherParser does not yet directly support a BNF grammar expressed
@@ -46,6 +46,18 @@ All grammars that have been defined can be found in `AllGrammars`:
 ```@docs
 AllGrammars
 ```
+
+## Constructor Functions
+
+The application usually wants to construct some form of data structure
+during the parsing operation, noot just a simple tree representing the
+result of the parse.  Both [`Constructor`](@ref) and
+[`DerivationRule`](@ref) allow for a constructor function to be called
+on the currently recognized input and return instead an object that is
+meaningful to the application.  Each constructor function takes two
+arguments: the fragment that was just parsed, and a context object
+that is meaningless to everything but the constructor function.
+
 
 ## Utility Functions
 
