@@ -2,7 +2,7 @@
 # HTML format of the resulting log.
 
 using XML
-using XML: Document, Element, Text, Comment, CData, escape, write
+using XML: Document, Element, Text, Comment, CData, escape
 using Logging
 using Test: TestLogger
 
@@ -142,7 +142,9 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                         class="log-index"),
                 Element("span",
                         Text(escape("@$(log_entry.kwargs[:index])"));
-                        title="index into input",
+                        # title="index into input",
+                        # Show the remaining text instead:
+                        title = escape(SubString(input, log_entry.kwargs[:index], length(input))),
                         class="input-index"),
                 Element("span",
                         Text(escape("$(log_entry.kwargs[:node])"));
