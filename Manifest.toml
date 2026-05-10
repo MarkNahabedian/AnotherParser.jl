@@ -2,10 +2,10 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "8568c49ec296fdb06213cac3d9dadaa29c8c9cc2"
+project_hash = "c6fd4ccd4ea12bdb276ac3028f2998995559eabf"
 
 [[deps.AnotherParser]]
-deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "Parameters", "PrettyPrint", "VectorLogging"]
+deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "Parameters", "PrettyPrint", "Test", "VectorLogging", "XML"]
 path = "."
 uuid = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 version = "0.1.0-dev"
@@ -438,6 +438,12 @@ repo-rev = "main"
 repo-url = "https://github.com/MarkNahabedian/VectorLogging.jl"
 uuid = "ec499083-3b8a-4310-a81e-8622934b14d2"
 version = "0.1.1"
+
+[[deps.XML]]
+deps = ["Mmap", "OrderedCollections"]
+path = "/Users/MarkNahabedian/.julia/dev/XML"
+uuid = "72c71f33-b9b6-44de-8c94-c961784809e2"
+version = "0.3.8"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
