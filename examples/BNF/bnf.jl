@@ -10,7 +10,19 @@ bnf"""
 """BNF
 DerivationRule(BootstrapBNFGrammar, "<syntax>",
                @Alternatives(BNFRef(BootstrapBNFGrammar, "<rule>"),
-                             Sequence(BNFRef(BootstrapBNFGrammar, "<rule>"))))
+                             Sequence(BNFRef(BootstrapBNFGrammar, "<rule>"),
+                                      BNFRef(BootstrapBNFGrammar, "<syntax>")))
+               ).constructor =
+                   # We return the DerivationRules, but they've
+                   # already been registered in the grammar.
+                   function(elts, grammar_name)
+                       println(elts)
+                       if elts isa DerivationRule
+                           [ elts ]
+                       else
+                           [ elts[1], elts[2]... ]
+                       end
+                   end
 
 
 bnf"""
@@ -279,21 +291,23 @@ DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                        BNFRef(BootstrapBNFGrammar, "<rule-char>"))))
 =#
 bnf"""
- <rule-name>      ::= <letter> <rule-name2>
- <rule-name2>     ::= EndOfInput() | "" | <rule-char> <rule-name2>
+ <rule-name>      ::= <letter> | <letter> <rule-name2>
+ <rule-name2>     ::= <rule-char> |  <rule-char> <rule-name2>
 """BNF
 # I believe the intent is that a <rule-name> must begin with a letter,
 # followed by any number of <rule-char>s.
 DerivationRule(BootstrapBNFGrammar, "<rule-name>",
-               Sequence(
+               Alternatives(
                    BNFRef(BootstrapBNFGrammar, "<letter>"),
-                   BNFRef(BootstrapBNFGrammar, "<rule-name2>"))
+                   Sequence(
+                       BNFRef(BootstrapBNFGrammar, "<letter>"),
+                       BNFRef(BootstrapBNFGrammar, "<rule-name2>")))
                ).constructor =
                    ignore_context(flatten_to_string)
                        
 DerivationRule(BootstrapBNFGrammar, "<rule-name2>",
                Alternatives(
-                   StringLiteral(""),
+                   BNFRef(BootstrapBNFGrammar, "<rule-char>"),
                    Sequence(BNFRef(BootstrapBNFGrammar, "<rule-char>"),
                             BNFRef(BootstrapBNFGrammar, "<rule-name2>"))))
 
@@ -322,19 +336,28 @@ which_BNF_grammar = :BootstrapBNFGrammar
 function bootstrap_bnf()
     errors = 0
     count = 0
-    for e in deferred_bnf_strs
+    for (str, grammar_name, source) in deferred_bnf_strs
         try
             count += 1
-            do_bnf_str(e...)
+            println(str)
+            do_bnf_str(str, grammar_name, source)
         catch err
             if err isa InterruptException
                 rethrow(err)
             end
-            println("$(e[1])")
+            println("$(e[1]) at @source")
             errors += 1
         end
     end
     println("$errors errors/$count.")
-    # which_BNF_grammar = :BNF
+    # Copy constructors from BootstrapBNFGrammar to BNF
+    bootstrap = AllGrammars[:BootstrapBNFGrammar]
+    bnf = AllGrammars[:BNF]
+    for derivation in values(bootstrap.derivations)
+        bnf[derivation.name].constructor = derivation.constructor
+    end
+    which_BNF_grammar = :BNF
 end
+
+# bootstrap_bnf()
 
