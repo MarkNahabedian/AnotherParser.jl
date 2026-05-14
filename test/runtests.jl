@@ -193,8 +193,10 @@ end
     end
 end
 
-include("test_SemVerBNF.jl")
-
 include("test_note_BNFNode_location.jl")
 
 include("../examples/BNF/test_bnf_grammar.jl")
+
+# Test example grammars:
+include("../examples/SemVer/test_SemVerBNF.jl")
+
