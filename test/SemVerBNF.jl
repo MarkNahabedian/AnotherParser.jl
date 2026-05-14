@@ -73,16 +73,6 @@
 
 SemVerGrammar = BNFGrammar(:SemVer)
 
-#=
-macro ref(name)
-    Expr(:call, :BNFRef, :SemVerGrammar, name)
-end
-=#
-
-function gref(name)
-    BNFRef(SemVerGrammar, name)
-end
-
 
 str2int(s) = parse(Int, s)
 
@@ -106,153 +96,155 @@ end
 
 DerivationRule(
     SemVerGrammar, "<valid semver>",
-    Alternatives(Constructor(gref("<version core>"),
-                             ignore_context(v -> VersionNumber(v...))),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('-'),
-                                         gref("<pre-release>")),
-                              ignore_context(
-                                  function(v)
-                                      (vc, dash, pre) = v
-                                      VersionNumber(vc..., pre)
-                                  end)),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('+'),
-                                         gref("<build>")),
-                              ignore_context(
-                                  function(v)
-                                      (vc, plus, build) = v
-                                      VersionNumber(vc..., (), build)
-                                  end)),
-                  Constructor(Sequence(gref("<version core>"),
-                                         CharacterLiteral('-'),
-                                         gref("<pre-release>"),
-                                         CharacterLiteral('+'),
-                                         gref("<build>")),
-                              ignore_context(
-                                  function(v)
-                                      (vc, dash, pre, plus, build) = v
-                                      VersionNumber(vc..., pre, build)
-                                  end))))
+    Alternatives(Constructor(BNFRef(SemVerGrammar, "<version core>"),
+                             (context, input::AbstractString,
+                              from::Int, to::Int, v) -> VersionNumber(v...)),
+                 Constructor(Sequence(BNFRef(SemVerGrammar, "<version core>"),
+                                      CharacterLiteral('-'),
+                                      BNFRef(SemVerGrammar, "<pre-release>")),
+                             function(context, input::AbstractString,
+                                      from::Int, to::Int, v)
+                                 (vc, dash, pre) = v
+                                 VersionNumber(vc..., pre)
+                             end),
+                 Constructor(Sequence(BNFRef(SemVerGrammar, "<version core>"),
+                                      CharacterLiteral('+'),
+                                      BNFRef(SemVerGrammar, "<build>")),
+                             function(context, input::AbstractString,
+                                      from::Int, to::Int, v)
+                                 (vc, plus, build) = v
+                                 VersionNumber(vc..., (), build)
+                             end),
+                 Constructor(Sequence(BNFRef(SemVerGrammar, "<version core>"),
+                                      CharacterLiteral('-'),
+                                      BNFRef(SemVerGrammar, "<pre-release>"),
+                                      CharacterLiteral('+'),
+                                      BNFRef(SemVerGrammar, "<build>")),
+                             function(context, input::AbstractString,
+                                      from::Int, to::Int, v)
+                                 (vc, dash, pre, plus, build) = v
+                                 VersionNumber(vc..., pre, build)
+                             end)))
 
 DerivationRule(
     SemVerGrammar, "<version core>",
-    Constructor(Sequence(gref("<major>"), CharacterLiteral('.'),
-                           gref("<minor>"), CharacterLiteral('.'),
-                           gref("<patch>")),
-                 ignore_context(undot)))
+    Constructor(Sequence(BNFRef(SemVerGrammar, "<major>"), CharacterLiteral('.'),
+                         BNFRef(SemVerGrammar, "<minor>"), CharacterLiteral('.'),
+                         BNFRef(SemVerGrammar, "<patch>")),
+                (context, input::AbstractString, from::Int, to::Int, v) -> undot(v)))
 
 DerivationRule(
     SemVerGrammar, "<major>",
-    gref("<numeric identifier>"))
+    BNFRef(SemVerGrammar, "<numeric identifier>"))
 
 DerivationRule(
     SemVerGrammar, "<minor>",
-    gref("<numeric identifier>"))
+    BNFRef(SemVerGrammar, "<numeric identifier>"))
 
 DerivationRule(
     SemVerGrammar, "<patch>",
-    gref("<numeric identifier>"))
+    BNFRef(SemVerGrammar, "<numeric identifier>"))
 
 DerivationRule(
     SemVerGrammar, "<pre-release>",
     Constructor(
-        gref("<dot-separated pre-release identifiers>"),
-        ignore_context(undot)))
+        BNFRef(SemVerGrammar, "<dot-separated pre-release identifiers>"),
+        (context, input::AbstractString, from::Int, to::Int, v) -> undot(v)))
 
 DerivationRule(
     SemVerGrammar, "<dot-separated pre-release identifiers>",
     Alternatives(
-        gref("<pre-release identifier>"),
-        Sequence(gref("<pre-release identifier>"),
+        BNFRef(SemVerGrammar, "<pre-release identifier>"),
+        Sequence(BNFRef(SemVerGrammar, "<pre-release identifier>"),
                   CharacterLiteral('.'),
-                  gref("<dot-separated pre-release identifiers>"))))
+                  BNFRef(SemVerGrammar, "<dot-separated pre-release identifiers>"))))
 
 DerivationRule(
     SemVerGrammar, "<build>",
-    gref("<dot-separated build identifiers>"))
+    BNFRef(SemVerGrammar, "<dot-separated build identifiers>"))
 
 DerivationRule(
     SemVerGrammar, "<dot-separated build identifiers>",
     Constructor(
         Alternatives(
-            gref("<build identifier>"),
-            Sequence(gref("<build identifier>"),
+            BNFRef(SemVerGrammar, "<build identifier>"),
+            Sequence(BNFRef(SemVerGrammar, "<build identifier>"),
                       CharacterLiteral('.'),
-                      gref("<dot-separated build identifiers>"))),
-        ignore_context(undot)))
+                      BNFRef(SemVerGrammar, "<dot-separated build identifiers>"))),
+        (context, input::AbstractString, from::Int, to::Int, v) -> undot(v)))
 
 DerivationRule(
     SemVerGrammar, "<pre-release identifier>",
-    Alternatives(gref("<alphanumeric identifier>"),
-                  gref("<numeric identifier>")))
+    Alternatives(BNFRef(SemVerGrammar, "<alphanumeric identifier>"),
+                  BNFRef(SemVerGrammar, "<numeric identifier>")))
 
 DerivationRule(
     SemVerGrammar, "<build identifier>",
-    Alternatives(gref("<alphanumeric identifier>"),
-                 Constructor(gref("<digits>"),
-                             ignore_context(str2int))))
+    Alternatives(BNFRef(SemVerGrammar, "<alphanumeric identifier>"),
+                 Constructor(BNFRef(SemVerGrammar, "<digits>"),
+                             (context, input::AbstractString, from::Int, to::Int, v) ->
+                                 str2int(v))))
 
 DerivationRule(
     SemVerGrammar, "<alphanumeric identifier>",
     StringCollector(
-        Alternatives(gref("<non-digit>"),
-                      Sequence(gref("<non-digit>"),
-                                gref("<identifier characters>")),
-                      Sequence(gref("<identifier characters>"),
-                                gref("<non-digit>")),
-                      Sequence(gref("<identifier characters>"),
-                                gref("<non-digit>"),
-                                gref("<identifier characters>")))))
+        Alternatives(BNFRef(SemVerGrammar, "<non-digit>"),
+                      Sequence(BNFRef(SemVerGrammar, "<non-digit>"),
+                                BNFRef(SemVerGrammar, "<identifier characters>")),
+                      Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
+                                BNFRef(SemVerGrammar, "<non-digit>")),
+                      Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
+                                BNFRef(SemVerGrammar, "<non-digit>"),
+                                BNFRef(SemVerGrammar, "<identifier characters>")))))
 
 DerivationRule(
     SemVerGrammar, "<numeric identifier>",
     Constructor(
         StringCollector(
             Alternatives(CharacterLiteral('0'),
-                          gref("<positive digit>"),
-                          Sequence(gref("<positive digit>"),
-                                    gref("<digits>")))),
-        ignore_context(str2int)))
+                          BNFRef(SemVerGrammar, "<positive digit>"),
+                          Sequence(BNFRef(SemVerGrammar, "<positive digit>"),
+                                    BNFRef(SemVerGrammar, "<digits>")))),
+        (context, input::AbstractString, from::Int, to::Int, v) -> str2int(v)))
 
 DerivationRule(
     SemVerGrammar, "<identifier characters>",
     StringCollector(
-        gref("<*identifier characters>")))
+        BNFRef(SemVerGrammar, "<*identifier characters>")))
 
 DerivationRule(
     SemVerGrammar, "<*identifier characters>",
-    Alternatives(gref("<identifier character>"),
-                  Sequence(gref("<identifier character>"),
-                            gref("<*identifier characters>"))))
+    Alternatives(BNFRef(SemVerGrammar, "<identifier character>"),
+                  Sequence(BNFRef(SemVerGrammar, "<identifier character>"),
+                            BNFRef(SemVerGrammar, "<*identifier characters>"))))
 
 DerivationRule(
     SemVerGrammar, "<identifier character>",
-    Alternatives(gref("<digit>"),
-                  gref("<non-digit>")))
+    Alternatives(BNFRef(SemVerGrammar, "<digit>"),
+                  BNFRef(SemVerGrammar, "<non-digit>")))
 
 DerivationRule(
     SemVerGrammar, "<non-digit>",
-    Alternatives(gref("<letter>"),
+    Alternatives(BNFRef(SemVerGrammar, "<letter>"),
                   CharacterLiteral('-')))
 
 DerivationRule(
     SemVerGrammar, "<digits>",
     StringCollector(
-        gref("<*digits>")))
+        BNFRef(SemVerGrammar, "<*digits>")))
 
 DerivationRule(
     SemVerGrammar, "<*digits>",
     Alternatives(
         # Reordered the alternatives to reduce calls to <digit>.
-        Sequence(gref("<digit>"),
-                  gref("<*digits>")),
-        gref("<digit>")))
+        Sequence(BNFRef(SemVerGrammar, "<digit>"),
+                  BNFRef(SemVerGrammar, "<*digits>")),
+        BNFRef(SemVerGrammar, "<digit>")))
 
 DerivationRule(
     SemVerGrammar, "<digit>",
     Alternatives(CharacterLiteral('0'),
-                  gref("<positive digit>")))
+                  BNFRef(SemVerGrammar, "<positive digit>")))
 
 DerivationRule(
     SemVerGrammar, "<positive digit>",

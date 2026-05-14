@@ -193,7 +193,6 @@ end
     end
 end
 
-include("SemVerBNF.jl")
 include("test_SemVerBNF.jl")
 
 include("test_note_BNFNode_location.jl")

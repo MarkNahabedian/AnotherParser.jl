@@ -1,15 +1,18 @@
+
+include("SemVerBNF.jl")
+
 @testset "SemVer grammar" begin
+    SemVerGrammar = AllGrammars[:SemVer]
     @test undot("foo") == ("foo",)
     @test undot(["foo", '.', ["bar"]]) == ("foo", "bar")
     @test undot(["foo", '.', ["bar", '.', ["baz"]]]) == ("foo", "bar", "baz")
-    
     @test recognize(CharacterLiteral('a'), "abc") == (true, 'a', 2)
     @test recognize(CharacterLiteral('a'), "b") == (false, nothing, 1)
     @test recognize(CharacterLiteral('a'), "") == (false, nothing, 1)
     @test recognize(SemVerGrammar["<letter>"], "abc") == (true, 'a', 2)
     @test recognize(SemVerGrammar["<digits>"], "1234 ") == (true, "1234", 5)
-    @test recognize(gref("<positive digit>"), "0") == (false, nothing, 1)
-    @test recognize(gref("<positive digit>"), "1") == (true, '1', 2)
+    @test recognize(BNFRef(SemVerGrammar, "<positive digit>"), "0") == (false, nothing, 1)
+    @test recognize(BNFRef(SemVerGrammar, "<positive digit>"), "1") == (true, '1', 2)
     @test recognize(SemVerGrammar["<numeric identifier>"], "1") == (true, 1, 2)
     @test recognize(SemVerGrammar["<major>"],"2") == (true, 2, 2)
     @test recognize(SemVerGrammar["<minor>"],"21") == (true, 21, 3)

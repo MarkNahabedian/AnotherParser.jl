@@ -54,9 +54,21 @@ during the parsing operation, noot just a simple tree representing the
 result of the parse.  Both [`Constructor`](@ref) and
 [`DerivationRule`](@ref) allow for a constructor function to be called
 on the currently recognized input and return instead an object that is
-meaningful to the application.  Each constructor function takes two
-arguments: the fragment that was just parsed, and a context object
-that is meaningless to everything but the constructor function.
+meaningful to the application.  Each constructor function takes as
+arguments:
+
+* a context object that is meaningless to everything but the
+  constructor function;
+
+* the entire input string;
+
+* the start index into that string of the portion currently
+  recognized;
+
+* the index of the first character in the input after the recognized
+  item;
+
+* the subordinate fragments that were just parsed.
 
 
 ## Utility Functions
@@ -106,12 +118,12 @@ DerivationRule(
     "text",
     Alternatives(
         Constructor(BNFRef(:example, "word"),
-                    ignore_context(x -> (x,)))  ,
+                    (context, input::AbstractString, from::Int, to::Int, x) -> (x,)),
         Constructor(
             Sequence(BNFRef(:example, "word"),
                      BNFRef(:example, "space"),
                      BNFRef(:example, "text")),
-            ignore_context(x -> (x[1], x[3]...)))))
+            (context, input::AbstractString, from::Int, to::Int, x) -> (x[1], x[3]...))))
 
 # Collapse the successive characters of a word into a string:
 DerivationRule(

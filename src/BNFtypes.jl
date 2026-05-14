@@ -1,10 +1,10 @@
-export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat,  NonTerminal,
+export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat, NonTerminal,
     CharacterLiteral, StringLiteral, RegexNode
 export Constructor, StringCollector
 export BNFRef, recognize, pretty, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
-export ignore_context, walk_nodes, print_uid_index
+export walk_nodes, print_uid_index
 
 using NahaJuliaLib
 
@@ -322,7 +322,7 @@ end
     if !matched
         return false, v, i
     end
-    v2 = n.constructor(v, context)
+    v2 = n.constructor(context, input, index, i - 1, v)
     if logReductions
         @info "$index: $(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
@@ -389,7 +389,8 @@ be called with the recognized value, and the context.
     constructor
 
     function DerivationRule(grammar::BNFGrammar, name, lhs; add_to_grammar=true)
-        p = new(grammar.name, name, lhs, ignore_context(identity))
+        p = new(grammar.name, name, lhs,
+                (context, input::AbstractString, from::Int, to::Int, value) -> value)
         if add_to_grammar
             add_derivation(p)
         end
@@ -404,8 +405,6 @@ end
 Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
     return AllGrammars[p.grammar_name]
 
-ignore_context(f) = (x, context) -> f(x)
-
 pretty(n::DerivationRule) = *("DerivationRule(",
                               n.name,
                               " ::= ",
@@ -419,7 +418,7 @@ pretty(n::DerivationRule) = *("DerivationRule(",
     if !matched
         return false, v, i
     end
-    v2 = n.constructor(v, context)
+    v2 = n.constructor(context, input, index, i - 1, v)
     if logReductions
         @info "$index: constructor for $(n.name) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end

@@ -12,11 +12,12 @@ DerivationRule(BootstrapBNFGrammar, "<syntax>",
                @Alternatives(BNFRef(BootstrapBNFGrammar, "<rule>"),
                              Sequence(BNFRef(BootstrapBNFGrammar, "<rule>"),
                                       BNFRef(BootstrapBNFGrammar, "<syntax>")))
+
                ).constructor =
                    # We return the DerivationRules, but they've
                    # already been registered in the grammar.
-                   function(elts, grammar_name)
-                       println(elts)
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, elts)
                        if elts isa DerivationRule
                            [ elts ]
                        else
@@ -38,7 +39,8 @@ DerivationRule(BootstrapBNFGrammar, "<rule>",
                         BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                         BNFRef(BootstrapBNFGrammar, "<expression>"),
                         BNFRef(BootstrapBNFGrammar, "<line-end>"))
-               ).constructor = function (elts, grammar_name)
+               ).constructor = function (grammar_name, input::AbstractString,
+                                         from::Int, to::Int, elts)
                    rule_name = join(elts[2:4])
                    expression = elts[8]
                    DerivationRule(grammar_name, rule_name, expression)
@@ -53,7 +55,10 @@ DerivationRule(BootstrapBNFGrammar, "<opt-whitespace>",
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>")),
                    StringLiteral(""))
                ).constructor =
-                   (v, context) -> nothing
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, v)
+                       nothing
+                   end
 
 
 bnf"""
@@ -68,7 +73,8 @@ DerivationRule(BootstrapBNFGrammar, "<expression>",
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                             BNFRef(BootstrapBNFGrammar, "<expression>"))
                )).constructor =
-                   function (elts, grammar_name)
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, elts)
                        if elts isa BNFNode
                            return elts
                        end
@@ -112,7 +118,7 @@ DerivationRule(BootstrapBNFGrammar, "<list>",
                             BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
                             BNFRef(BootstrapBNFGrammar, "<list>"),))
                ).constructor =
-                   function (elts, grammar_name)
+                   function (context, input::AbstractString, from::Int, to::Int, elts)
                        if elts isa BNFNode
                            return elts
                        end
@@ -135,7 +141,8 @@ DerivationRule(BootstrapBNFGrammar, "<term>",
                             BNFRef(BootstrapBNFGrammar, "<rule-name>"),
                             CharacterLiteral('>')))
                        ).constructor =
-                           function (elts, grammar_name)
+                           function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, elts)
                                if elts isa StringLiteral
                                    return elts
                                end
@@ -158,10 +165,12 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
                        StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
                        CharacterLiteral('\'')))
                ).constructor =
-                   function (x, grammar_name)
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, x)
                        @assert length(x) == 3
                        StringLiteral(x[2])
                    end
+
 
 bnf"""
  <text1>          ::= "" | <character1> <text1>
@@ -204,7 +213,11 @@ DerivationRule(BootstrapBNFGrammar, "<letter>",
 # Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<letter>",
                RegexNode(r"[a-zA-Z]")).constructor =
-                   (m, context) -> m.match
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, m::RegexMatch)
+                       m.match
+                   end
+
 
 bnf"""
  <digit>          ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
@@ -217,7 +230,11 @@ DerivationRule(BootstrapBNFGrammar, "<digit>",
 # Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<digit>",
                RegexNode(r"[0-9]")).constructor =
-                   (m, context) -> m.match
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, m::RegexMatch)
+                       m.match
+                   end
+
 
 bnf"""
  <symbol>         ::=  "|" | " " | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "\" | "]" | "^" | "_" | "`" | "{" | "}" | "~"
@@ -260,7 +277,11 @@ DerivationRule(BootstrapBNFGrammar, "<symbol>",
 # Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<symbol>",
                RegexNode(r"[| !#$%&()*+,-./:;>=<?@\[\\\]^_`{}~]")).constructor = 
-                   (m, context) -> m.match
+                   function (grammar_name, input::AbstractString,
+                             from::Int, to::Int, m::RegexMatch)
+                       m.match
+                   end
+
 
 bnf"""
  <character1>     ::= <character> | "'"
@@ -302,8 +323,10 @@ DerivationRule(BootstrapBNFGrammar, "<rule-name>",
                    Sequence(
                        BNFRef(BootstrapBNFGrammar, "<letter>"),
                        BNFRef(BootstrapBNFGrammar, "<rule-name2>")))
-               ).constructor =
-                   ignore_context(flatten_to_string)
+               ).constructor = function(grammar_name, input::AbstractString,
+                                        from::Int, to::Int, v)
+                   SubString(input, from, to)
+               end
                        
 DerivationRule(BootstrapBNFGrammar, "<rule-name2>",
                Alternatives(
@@ -339,13 +362,13 @@ function bootstrap_bnf()
     for (str, grammar_name, source) in deferred_bnf_strs
         try
             count += 1
-            println(str)
+            # println(str)
             do_bnf_str(str, grammar_name, source)
         catch err
             if err isa InterruptException
                 rethrow(err)
             end
-            println("$(e[1]) at @source")
+            println(stderr, "$err at $source")
             errors += 1
         end
     end
@@ -359,5 +382,5 @@ function bootstrap_bnf()
     which_BNF_grammar = :BNF
 end
 
-# bootstrap_bnf()
+bootstrap_bnf()
 
