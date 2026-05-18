@@ -1,7 +1,7 @@
 
 include("SemVerBNF.jl")
 
-@testset "SemVer grammar" begin
+@testset "example SemVer grammar" begin
     SemVerGrammar = AllGrammars[:SemVer]
     @test undot("foo") == ("foo",)
     @test undot(["foo", '.', ["bar"]]) == ("foo", "bar")
