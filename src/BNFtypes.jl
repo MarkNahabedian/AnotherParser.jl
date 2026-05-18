@@ -1,7 +1,7 @@
 export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat, NonTerminal,
     CharacterLiteral, StringLiteral, RegexNode
 export Constructor, StringCollector
-export BNFRef, recognize, pretty, logReductions, loggingReductions
+export BNFRef, recognize, pretty, is_left_recursive, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
 export walk_nodes, print_uid_index
@@ -17,6 +17,17 @@ trace_recognize = false
 Return a human-readable string that describes the node.
 """
 function pretty end
+
+
+"""
+    is_left_recursive(node::BNFNode, grammar::Symbol, name::AbstractString)
+
+Returns true is `node` is left recursive with respect to the
+[`DerivationRule`](@ref) named `name`.
+"""
+function is_left_recursive end
+
+is_left_recursive(::BNFNode, ::Symbol, ::AbstractString) = false
 
 
 """
@@ -96,6 +107,9 @@ pretty(n::Sequence) = *("Sequence(",
                         join(map(pretty, n.elements), " "),
                         ")")
 
+is_left_recursive(node::Sequence, grammar::Symbol, name::AbstractString) =
+    is_left_recursive(first(node.elements), grammar, name)
+
 @trace trace_recognize function recognize(p::Parser, n::Sequence,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
@@ -128,6 +142,9 @@ end
 pretty(n::Alternatives) = *("Alternatives(",
                             join(map(pretty, n.alternatives), " "),
                             ")")
+
+is_left_recursive(node::Alternatives, grammar::Symbol, name::AbstractString) =
+    any(n -> is_left_recursive(n, grammar, name), node.alternatives)
 
 @trace trace_recognize function recognize(p::Parser, n::Alternatives,
                                           input::AbstractString, index::Int, finish::Int,
@@ -175,6 +192,9 @@ end
 pretty(n::Repeat) = *("Repeat(",
                       pretty(n.node),
                       ")")
+
+is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
+    is_left_recursive(node.node, grammar, name)
 
 @trace trace_recognize function recognize(p::Parser, n::Repeat,
                                           input::AbstractString, index::Int, finish::Int,
@@ -362,6 +382,15 @@ function Base.getindex(grammar::BNFGrammar, key::String)
     end
 end
 
+function is_left_recursive(node::BNFGrammar)
+    for d in values(node.derivations)
+        if is_left_recursive(d)
+            return true
+        end
+    end
+    false
+end
+
 
 """
 A Dict of all defined grammars.
@@ -391,6 +420,9 @@ be called with the recognized value, and the context.
     function DerivationRule(grammar::BNFGrammar, name, lhs; add_to_grammar=true)
         p = new(grammar.name, name, lhs,
                 (context, input::AbstractString, from::Int, to::Int, value) -> value)
+        if is_left_recursive(p)
+            @warn "Left-recursive derivation" derivation = p
+        end
         if add_to_grammar
             add_derivation(p)
         end
@@ -410,6 +442,11 @@ pretty(n::DerivationRule) = *("DerivationRule(",
                               " ::= ",
                               pretty(n.lhs),
                               ")")
+
+is_left_recursive(node::DerivationRule) = is_left_recursive(node, node.grammar_name, node.name)
+
+is_left_recursive(node::DerivationRule, grammar::Symbol, name::AbstractString) =
+    is_left_recursive(node.lhs, grammar, name)
 
 @trace trace_recognize function recognize(p::Parser, n::DerivationRule,
                                           input::AbstractString, index::Int, finish::Int,
@@ -468,6 +505,9 @@ Base.getproperty(n::BNFRef, ::Val{:target}) =
     AllGrammars[n.grammar_name][n.name]
 
 pretty(n::BNFRef) = "BNFRef(" * n.name * ")"
+
+is_left_recursive(node::BNFRef, grammar::Symbol, name::AbstractString) =
+    node.grammar_name == grammar && node.name == name
 
 @trace trace_recognize function recognize(p::Parser, n::BNFRef,
                                           input::AbstractString, index::Int, finish::Int,
