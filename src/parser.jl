@@ -12,8 +12,9 @@ DEBUG_BNFNODES = []
 mutable struct Parser
     call_counter::Int
     recognize1_cache::Dict
+    pending_parse_tokeen
 
-    Parser() = new(1, Dict())
+    Parser() = new(1, Dict(), gensym())
 end
 
 function recognize1(p::Parser, n::BNFNode, input::AbstractString;
@@ -31,16 +32,22 @@ function recognize1(p::Parser, n::BNFNode, input::AbstractString,
         @info "recognize1" call_counter node index "trying"
     end
     key = (n.uid, input, index)
-    # We should be caching the result
+    # We avoid infinite recursion and  cach intermediate results:
     if haskey(p.recognize1_cache, key)
-        result = p.recognize1_cache[key]
-        if dbg
-            @info "recognize1" call_counter node index = result[3] cacheed_result = result
+        if p.recognize1_cache[key] == p.pending_parse_tokeen
+            @info "recognize1" call_counter node index infinite_recursion=true
+            error("infinite recursion duriing parse: $key")
+        else
+            result = p.recognize1_cache[key]
+            if dbg
+                @info "recognize1" call_counter node index = result[3] cacheed_result = result
+            end
+            return result
         end
-        return result
     end
+    p.recognize1_cache[key] = p.pending_parse_tokeen
     matched, v, i = recognize(p, n, input, index, finish, context)
-    if matched == true && i == index
+    if matched == true && i != index
         p.recognize1_cache[key] = (matched, v, i)
     end
     if dbg

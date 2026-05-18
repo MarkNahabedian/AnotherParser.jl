@@ -15,8 +15,10 @@ body {
 }
 div.input-text {
     font-family: monospace;
-}
-div.level {
+    border: solid 3px;
+    margin-top: 1ex;
+    margin-bottom: 2ex;
+}div.level {
     margin-left: 1em;
     margin-top: 1ex;
     margin-bottom: none;
@@ -51,9 +53,11 @@ function toggle_visibility(element) {
 
 function log_index_click_handler(event) {
     if (event instanceof PointerEvent) {
-        event.target.closest(".level").querySelectorAll(":scope > .level").forEach((element, index) => {
-            toggle_visibility(element);
-        });
+        if (event.target.classList.contains("log-index")) {
+            event.target.closest(".level").querySelectorAll(":scope > .level").forEach((element, index) => {
+                toggle_visibility(element);
+            });
+        }
     }
 }
 
@@ -64,6 +68,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
 });
 """
+
+function debug_parsing(grammar::Symbol, rulename::AbstractString,
+                       input::AbstractString; keyargs...)
+    debug_parsing(AllGrammars[grammar], rulename, input; keyargs...)
+end
+
 
 """
     debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; index = 1, finish = length(input), context=nothing, report_file::AbstractString)
@@ -77,13 +87,6 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                        input::AbstractString;
                        index = 1, finish = length(input), context=nothing,
                        report_file::AbstractString)
-    is_parse_start(log_entry) =
-        haskey(log_entry.kwargs, :trying)
-    is_cache_hit(log_entry) =
-        haskey(log_entry.kwargs, :cacheed_result)
-    is_match(log_entry) =
-        haskey(log_entry.kwargs, :matched)
-    is_parse_end(log_entry) = is_cache_hit(log_entry) || is_match(log_entry)
     logger = TestLogger()
     parser = Parser()
     let                      # set DEBUG_BNFNODES
@@ -109,9 +112,24 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                                          context = context)
             end
         finally
+            process_and_report_parser_debug_log(grammar, rulename, input, logger, report_file)
             AnotherParser.DEBUG_BNFNODES = saved_debug
         end
     end
+end
+
+
+function process_and_report_parser_debug_log(grammar, rulename, input, logger, report_file)
+    report_file = abspath(report_file)
+    is_parse_start(log_entry) =
+        haskey(log_entry.kwargs, :trying)
+    is_cache_hit(log_entry) =
+        haskey(log_entry.kwargs, :cacheed_result)
+    is_recursion(log_entry) =
+        get(log_entry.kwargs, :infinite_recursion, false)
+    is_match(log_entry) =
+        haskey(log_entry.kwargs, :matched)
+    is_parse_end(log_entry) = is_cache_hit(log_entry) || is_match(log_entry) || is_recursion(log_entry)
     # Match logging records by call_counter and infer hierarchy:
     log_index_stack = []
     log_entry_children = Dict{Int64, Vector{Int64}}()  # log entry index => [ log entry index ]
@@ -131,7 +149,7 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
             pop!(log_index_stack)
         end
     end
-    global LOG_ENTRY_CHILDREN = log_entry_children
+    # global LOG_ENTRY_CHILDREN = log_entry_children
     # Write the HTML file:
     function log_tree(log_index)
         log_entry = logger.logs[log_index]
@@ -156,6 +174,10 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                     [ Element("div",
                               Text(escape("cahched result: $(log_entry.kwargs[:cacheed_result])"));
                               class="result")
+                      ]
+                elseif is_recursion(log_entry)
+                    [ Element("div",
+                              Text(escape("RECURSION!")))
                       ]
                 elseif is_match(log_entry)
                     if log_entry.kwargs[:matched]
@@ -182,7 +204,7 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                 id = "index-$log_index",
                 class="level")
     end
-    global LOG_ENTRIES = logger.logs
+    # global LOG_ENTRIES = logger.logs
     doc = Document(
         Element("head",
                 Element("style",
@@ -199,5 +221,6 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
     open(report_file, "w") do io
         XML.write(io, doc)
     end
+    println("Wrote $report_file")
 end
 
