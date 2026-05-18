@@ -14,6 +14,9 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VectorLogging = "ec499083-3b8a-4310-a81e-8622934b14d2"
 XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
 
+[sources]
+XML = { url = "https://github.com/MarkNahabedian/XML.jl" }
+
 [compat]
 DataStructures = "0.18"
 MacroTools = "0.5"
