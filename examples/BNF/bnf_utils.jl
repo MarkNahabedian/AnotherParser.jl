@@ -20,9 +20,10 @@ end
 
 
 """
+    bnf"str"grammar_name
+
 Parse `str` as BNF and add those productions to the grammar named
-`grammar_name`.  Currently `@bnf_str` only supports one production
-rule per string.
+`grammar_name`.
 """
 macro bnf_str(str, grammar_name)
     grammar_name = Symbol(grammar_name)
