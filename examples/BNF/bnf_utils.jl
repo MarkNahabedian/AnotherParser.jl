@@ -7,28 +7,30 @@ which_BNF_grammar = nothing
 
 deferred_bnf_strs = []
 
-function do_bnf_str(str::String, grammar_name::Symbol)
+function do_bnf_str(str::String, grammar_name::Symbol, source)
     if !haskey(AllGrammars, grammar_name)
         BNFGrammar(grammar_name)
     end
-    g::BNFGrammar = AllGrammars[Symbol(grammar_name)]
+    # g::BNFGrammar = AllGrammars[Symbol(grammar_name)]
     bnf = AllGrammars[which_BNF_grammar]
+    # How to set source location?  Do we need to include it in the
+    # context?
     recognize(bnf["<syntax>"], str; context=grammar_name)
 end
 
 
 """
 Parse `str` as BNF and add those productions to the grammar named
-`grammar_name`.
+`grammar_name`.  Currently `@bnf_str` only supports one production
+rule per string.
 """
 macro bnf_str(str, grammar_name)
-    # HOW TO CAPTURE SOURCE LOCATION? SEE cl_str.
     grammar_name = Symbol(grammar_name)
     if which_BNF_grammar === nothing
-        push!(deferred_bnf_strs, (str, grammar_name))
+        push!(deferred_bnf_strs, (str, grammar_name, __source__))
         return str
     end
-    do_bnf_str(str, grammar_name)
+    do_bnf_str(str, grammar_name, __source__)
 end
 
 
