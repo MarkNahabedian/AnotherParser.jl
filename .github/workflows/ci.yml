@@ -55,8 +55,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          julia --project=docs -e '
-            using Documenter: DocMeta, doctest
-            using AnotherParser
-            DocMeta.setdocmeta!(AnotherParser, :DocTestSetup, :(using AnotherParser); recursive=true)
-            doctest(AnotherParser)'
+          julia --project docs/make.jl
+
