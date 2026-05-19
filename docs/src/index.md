@@ -1,30 +1,33 @@
-# AnotherParser.jl
+```@meta
+CurrentModule = AnotherParser
+```
+
+# AnotherParser
+
+Documentation for [AnotherParser](https://github.com/MarkNahabedian/AnotherParser.jl).
 
 AnotherParser allows one to implement a recursive descent parser given
 a hierarchical grammar expressed as
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
-**AnotherParser does not yet directly support a BNF grammar expressed
-  in BNF syntax.**
-
 
 ## Grammars
 
-A grammar is implemented as a tree of structs that are subtypes of
-`BNFNode`.
+A grammar is represented by a [`BNFGrammar`](@ref) struct.
+[`AllGrammars`](@ref) is a catalog of all of the defined grammars.
 
 ```@docs
 BNFGrammar
+AllGrammars
 ```
 
-The tree can be broken up into named `DerivationRule`s which can be
-referred to by name via `BNFRef`, and thus shared among different parts
-of the grammar and between grammars.
+Each `BNFGrammar` includes a collection of [`DerivationRule`]@ref)s.
+Each `DerivationRule` has a "left hand side' that is a tree of
+[`BNFNode`](@ref)s.
 
-```@docs
-DerivationRule
-BNFRef
-```
+A `DerivationRule` can be referred to by name via [`BNFRef`](@ref),
+and thus shared among different parts of the grammar and between
+grammars.
 
 
 ```@autodocs
@@ -37,45 +40,19 @@ Each BNFNode implements the `recognize` generic function, which
 performs the actual parsing:
 
 ```@docs
-recognize(n::BNFNode, input::AbstractString; index=1, finish=lastindex(input), context=nothing)
+recognize
 ```
-
-
-All grammars that have been defined can be found in `AllGrammars`:
-
-```@docs
-AllGrammars
-```
-
-## Constructor Functions
-
-The application usually wants to construct some form of data structure
-during the parsing operation, noot just a simple tree representing the
-result of the parse.  Both [`Constructor`](@ref) and
-[`DerivationRule`](@ref) allow for a constructor function to be called
-on the currently recognized input and return instead an object that is
-meaningful to the application.  Each constructor function takes as
-arguments:
-
-* a context object that is meaningless to everything but the
-  constructor function;
-
-* the entire input string;
-
-* the start index into that string of the portion currently
-  recognized;
-
-* the index of the first character in the input after the recognized
-  item;
-
-* the subordinate fragments that were just parsed.
 
 
 ## Utility Functions
 
 ```@docs
+@bnf_str
 show_grammar
 check_references
+pretty
+is_left_recursive
+walk_nodes
 ```
 
 ## Construction Utilities
@@ -100,6 +77,30 @@ Various functions are provided to serve as constructors:
 ```@docs
 AnotherParser.flatten_to_string
 ```
+
+
+### Constructor Functions
+
+The application usually wants to construct some form of data structure
+during the parsing operation, not just a simple tree representing the
+result of the parse.  Both [`Constructor`](@ref) and
+[`DerivationRule`](@ref) allow for a constructor function to be called
+on the currently recognized input and return instead an object that is
+meaningful to the application.  Each constructor function takes as
+arguments:
+
+* a context object that is meaningless to everything but the
+  constructor function;
+
+* the entire input string;
+
+* the start index into that input string string of the portion
+  currently recognized;
+
+* the index of the first character in the input after the recognized
+  item;
+
+* the subordinate fragments that were just parsed.
 
 
 ## Example
@@ -163,5 +164,20 @@ recognize(AllGrammars[:example]["text"],
 
 There is much room for simplification and syntactic sugar.
 
-Until I write more documentation, see test/SemVerBNF.jl for an example
-that implements the SemVer version number format.
+Until I write more documentation, see the example grammars in the
+`examples` directory.
+
+
+## Debugging
+
+```@docs
+debug_parsing
+DEBUG_BNFNODES
+```
+
+
+## Index
+
+```@index
+```
+
