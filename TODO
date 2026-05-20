@@ -1,7 +1,15 @@
 TODO:
 
+We need an easier way to write constructor functions.
+
+Write unit tests for all example grammars.
+
+How to test the BNF grammar?
+
 Use SubString for values of CharacterLiteral, StringLiteral and
 RegexNode.
+
+Each recognize method has the start and end indices of the value.
 
 How can bnf_str pass __source__ to the DerivationRule constructor?
 More complicated context argument?  There are DerivationRule
