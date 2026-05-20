@@ -187,30 +187,30 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<alphanumeric identifier>",
-    StringCollector(
-        Alternatives(BNFRef(SemVerGrammar, "<non-digit>"),
-                      Sequence(BNFRef(SemVerGrammar, "<non-digit>"),
-                                BNFRef(SemVerGrammar, "<identifier characters>")),
-                      Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
-                                BNFRef(SemVerGrammar, "<non-digit>")),
-                      Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
-                                BNFRef(SemVerGrammar, "<non-digit>"),
-                                BNFRef(SemVerGrammar, "<identifier characters>")))))
+    Alternatives(BNFRef(SemVerGrammar, "<non-digit>"),
+                 Sequence(BNFRef(SemVerGrammar, "<non-digit>"),
+                          BNFRef(SemVerGrammar, "<identifier characters>")),
+                 Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
+                          BNFRef(SemVerGrammar, "<non-digit>")),
+                 Sequence(BNFRef(SemVerGrammar, "<identifier characters>"),
+                          BNFRef(SemVerGrammar, "<non-digit>"),
+                          BNFRef(SemVerGrammar, "<identifier characters>")))
+).constructor = substring_constructor_function
 
 DerivationRule(
     SemVerGrammar, "<numeric identifier>",
-    Constructor(
-        StringCollector(
-            Alternatives(CharacterLiteral('0'),
-                          BNFRef(SemVerGrammar, "<positive digit>"),
-                          Sequence(BNFRef(SemVerGrammar, "<positive digit>"),
-                                    BNFRef(SemVerGrammar, "<digits>")))),
-        (context, input::AbstractString, from::Int, to::Int, v) -> str2int(v)))
+    Alternatives(CharacterLiteral('0'),
+                 BNFRef(SemVerGrammar, "<positive digit>"),
+                 Sequence(BNFRef(SemVerGrammar, "<positive digit>"),
+                          BNFRef(SemVerGrammar, "<digits>")))
+).constructor = function (context, input::AbstractString, from::Int, to::Int, v)
+    str2int(SubString(input, from, to))
+end
 
 DerivationRule(
     SemVerGrammar, "<identifier characters>",
-    StringCollector(
-        BNFRef(SemVerGrammar, "<*identifier characters>")))
+    BNFRef(SemVerGrammar, "<*identifier characters>")
+).constructor = substring_constructor_function
 
 DerivationRule(
     SemVerGrammar, "<*identifier characters>",
@@ -230,8 +230,8 @@ DerivationRule(
 
 DerivationRule(
     SemVerGrammar, "<digits>",
-    StringCollector(
-        BNFRef(SemVerGrammar, "<*digits>")))
+    BNFRef(SemVerGrammar, "<*digits>")
+).constructor = substring_constructor_function
 
 DerivationRule(
     SemVerGrammar, "<*digits>",
