@@ -255,3 +255,5 @@ DerivationRule(
     Alternatives([CharacterLiteral(c) for c in 'A':'Z']...,
                   [CharacterLiteral(c) for c in 'a':'z']...))
 
+check_references(:SemVer)
+

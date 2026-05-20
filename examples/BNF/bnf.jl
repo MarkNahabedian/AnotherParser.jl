@@ -384,3 +384,5 @@ end
 
 bootstrap_bnf()
 
+check_references(:BootstrapBNFGrammar)
+check_references(:BNF)

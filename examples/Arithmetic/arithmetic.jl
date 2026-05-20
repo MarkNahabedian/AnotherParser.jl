@@ -20,6 +20,8 @@ bnf"""
 <digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 """LeftRecursiveArithmeticGrammar
 
+check_references(:LeftRecursiveArithmeticGrammar)
+
 
 delete!(AllGrammars, :ExampleArithmeticGrammar)
 
@@ -118,4 +120,7 @@ AllGrammars[:ExampleArithmeticGrammar]["<integer>"].constructor =
     end
 
 # <digit uses the identity constructor.
+
+
+check_references(:ExampleArithmeticGrammar)
 

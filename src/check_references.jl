@@ -14,6 +14,8 @@ function check_references(g::BNFGrammar)
     err
 end
 
+check_references(name::Symbol) = check_references(AllGrammars[name])
+
 check_references(::Empty) = false
 check_references(::CharacterLiteral) = false
 check_references(::StringCollector) = false
