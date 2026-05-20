@@ -100,6 +100,7 @@ arguments:
 
 ```@docs
 AnotherParser.identity_constructor_function
+AnotherParser.substring_constructor_function
 ```
 
 
