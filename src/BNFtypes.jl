@@ -4,7 +4,7 @@ export Constructor, StringCollector
 export BNFRef, recognize, pretty, is_left_recursive, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
-export walk_nodes, print_uid_index
+export walk_nodes, print_uid_index, identity_constructor_function
 
 using NahaJuliaLib
 
@@ -20,6 +20,8 @@ function pretty end
 
 
 """
+    is_left_recursive(::BNFGrammar)
+    is_left_recursive(::DerivationRule)
     is_left_recursive(node::BNFNode, grammar::Symbol, name::AbstractString)
 
 Returns true is `node` is left recursive with respect to the
@@ -403,6 +405,15 @@ end
 
 
 """
+    identity_constructor_function(context, input::AbstractString, from::Int, to::Int, value)
+
+A constructor function that just returns the raw value from its
+associated DerivationRule or subexpression.
+"""
+identity_constructor_function(context, input::AbstractString, from::Int, to::Int, value) = value
+
+
+"""
     DerivationRule(grammar, rule_name, expression)
 
 Implements a single production named `name` in the specified `grammar`.
@@ -418,8 +429,7 @@ be called with the recognized value, and the context.
     constructor
 
     function DerivationRule(grammar::BNFGrammar, name, lhs; add_to_grammar=true)
-        p = new(grammar.name, name, lhs,
-                (context, input::AbstractString, from::Int, to::Int, value) -> value)
+        p = new(grammar.name, name, lhs, identity_constructor_function)
         if is_left_recursive(p)
             @warn "Left-recursive derivation" derivation = p
         end

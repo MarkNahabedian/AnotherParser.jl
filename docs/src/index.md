@@ -102,6 +102,10 @@ arguments:
 
 * the subordinate fragments that were just parsed.
 
+```@docs
+AnotherParser.identity_constructor_function
+```
+
 
 ## Example
 
