@@ -74,10 +74,6 @@ Also, `DerivationRule` can be assigned a `constructor` property.
 
 Various functions are provided to serve as constructors:
 
-```@docs
-AnotherParser.flatten_to_string
-```
-
 
 ### Constructor Functions
 
