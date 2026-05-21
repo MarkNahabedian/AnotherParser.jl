@@ -48,14 +48,6 @@ PrettyPrint.pp_impl(io, o::Alternatives, indent::Int) =
     PrettyPrint.pprint_for_seq(io, "Alternatives(", ")",
                                o.alternatives, indent)    
 
-function PrettyPrint.pp_impl(io, o::StringCollector, indent::Int)
-    r = "StringCollector("
-    print(io, r)
-    pprint(io, o.node, indent + 4)
-    print(io, ")")
-    indent + 2
-end
-
 function PrettyPrint.pp_impl(io, o::Constructor, indent::Int)
     r = "Constructor("
     print(io, r)

@@ -158,11 +158,13 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
                Alternatives(
                    Sequence(
                        CharacterLiteral('"'),
-                       StringCollector(BNFRef(BootstrapBNFGrammar, "<text1>")),
+                       Constructor(BNFRef(BootstrapBNFGrammar, "<text1>"),
+                                  substring_constructor_function),
                        CharacterLiteral('"')),
                    Sequence(
                        CharacterLiteral('\''),
-                       StringCollector(BNFRef(BootstrapBNFGrammar, "<text2>")),
+                       Constructor(BNFRef(BootstrapBNFGrammar, "<text2>"),
+                                   substring_constructor_function),
                        CharacterLiteral('\'')))
                ).constructor =
                    function (grammar_name, input::AbstractString,

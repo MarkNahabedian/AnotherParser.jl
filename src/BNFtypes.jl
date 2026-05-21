@@ -1,6 +1,5 @@
 export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat, NonTerminal,
-    CharacterLiteral, StringLiteral, RegexNode
-export Constructor, StringCollector
+    CharacterLiteral, StringLiteral, RegexNode, Constructor
 export BNFRef, recognize, pretty, is_left_recursive, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
@@ -537,30 +536,6 @@ end
 
 
 """
-   StringCollector
-
-StringCollector returns the entire substrring of the input that
-@trace trace_recognize was recognized by its subexpression.
-"""
-@bnfnode struct StringCollector <: BNFNode
-    node::BNFNode
-end
-
-pretty(n::StringCollector) = "StringCollector(" * pretty(n.node) * ")"
-
-@trace trace_recognize function recognize(p::Parser, n::StringCollector,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
-    start = index
-    matched, v, i = recognize1(p, n.node, input, index, finish, context)
-    if !matched
-        return false, v, i
-    end
-    return true, SubString(input, start, i - 1), i
-end
-
-
-"""
     walk_nodes(f, node)
 
 Applies `f` to each node in the node tree that descends from `node`.
@@ -592,11 +567,6 @@ function walk_nodes(f, node::Alternatives)
     for alt in node.alternatives
         walk_nodes(f, alt)
     end
-end
-
-function walk_nodes(f, node::StringCollector)
-    f(node)
-    f(node.node)
 end
 
 function walk_nodes(f, node::Repeat)
