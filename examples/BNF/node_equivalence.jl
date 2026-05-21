@@ -6,13 +6,15 @@ nodeeq(n1::Any, n2::Any) = n1 == n2
 
 function nodeeq(n1::BNFNode, n2::BNFNode)
     if typeof(n1) != typeof(n2)
+        println(stderr, "Nodes don't match:\n  $n1\n  $n2")
         return false
     end
     for f in fieldnames(typeof(n1))
-        if f in (:uid, :source)
+        if f in (:uid, :source, :grammar_name)
             continue
         end
         if !nodeeq(getproperty(n1, f), getproperty(n2, f))
+            println(stderr, "Nodes don't match, field $f of:\n  $n1\n  $n2")
             return false
         end
     end
@@ -25,9 +27,15 @@ end
 nodeeq(l1::CharacterLiteral, l2::CharacterLiteral) =
     l1.character == l2.character
 
-#=
+
 nodeeq(l1::StringLiteral, l2::StringLiteral) =
     l1.str == l2.str
+
+nodeeq(l1::CharacterLiteral, l2::StringLiteral) =
+    length(l2.str) == 1 && l2.str[1] == l1.character
+
+nodeeq(l1::StringLiteral, l2::CharacterLiteral) =
+    length(l1.str) == 1 && l1.str[1] == l2.character
 
 nodeeq(n1::Sequence, n2::Sequence) =
     nodeeq(n1.elements, n2.elements)
@@ -36,8 +44,6 @@ nodeeq(n1::Sequence, n2::Sequence) =
 # how we're using it, we expect it won't be an issue.
 nodeeq(n1::Alternatives, n2::Alternatives) =
     nodeeq(n1.alternatives, n2.alternatives)
-
-=#
 
 function nodeeq(v1::Tuple, v2::Tuple)
     if length(v1) != length(v2)

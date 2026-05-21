@@ -195,10 +195,12 @@ end
 
 include("test_note_BNFNode_location.jl")
 
-include("../examples/BNF/test_bnf_grammar.jl")
 
 # Test example grammars:
+
 include("../examples/SemVer/test_SemVerBNF.jl")
+
+include("../examples/BNF/test_bnf_grammar.jl")
 
 include("../examples/Arithmetic/test_arithmetic_grammar.jl")
 

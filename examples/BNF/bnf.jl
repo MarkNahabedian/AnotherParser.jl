@@ -206,12 +206,11 @@ DerivationRule(BootstrapBNFGrammar, "<character>",
 bnf"""
  <letter>         ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
 """BNF
-#=
 DerivationRule(BootstrapBNFGrammar, "<letter>",
                Alternatives(
                    [CharacterLiteral(c) for c in 'A':'Z']...,
                    [CharacterLiteral(c) for c in 'a':'z']...))
-=#
+#=
 # Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<letter>",
                RegexNode(r"[a-zA-Z]")).constructor =
@@ -219,16 +218,16 @@ DerivationRule(BootstrapBNFGrammar, "<letter>",
                              from::Int, to::Int, m::RegexMatch)
                        m.match
                    end
+=#
 
 
 bnf"""
  <digit>          ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 """BNF
-#=
 DerivationRule(BootstrapBNFGrammar, "<digit>",
                Alternatives(
                    [CharacterLiteral(c) for c in '0':'9']...))
-=#
+#=
 # Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<digit>",
                RegexNode(r"[0-9]")).constructor =
@@ -236,12 +235,12 @@ DerivationRule(BootstrapBNFGrammar, "<digit>",
                              from::Int, to::Int, m::RegexMatch)
                        m.match
                    end
+=#
 
 
 bnf"""
  <symbol>         ::=  "|" | " " | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "\" | "]" | "^" | "_" | "`" | "{" | "}" | "~"
 """BNF
-#=
 DerivationRule(BootstrapBNFGrammar, "<symbol>",
                Alternatives(
                    CharacterLiteral('|'),
@@ -275,14 +274,14 @@ DerivationRule(BootstrapBNFGrammar, "<symbol>",
                    CharacterLiteral('{'),
                    CharacterLiteral('}'),
                    CharacterLiteral('~'),))
-=#
-# Less noisy tracing:
+#=# Less noisy tracing:
 DerivationRule(BootstrapBNFGrammar, "<symbol>",
                RegexNode(r"[| !#$%&()*+,-./:;>=<?@\[\\\]^_`{}~]")).constructor = 
                    function (grammar_name, input::AbstractString,
                              from::Int, to::Int, m::RegexMatch)
                        m.match
                    end
+=#
 
 
 bnf"""

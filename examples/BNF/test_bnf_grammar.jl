@@ -55,7 +55,7 @@ BNFGrammar(:TestGrammar)
     let
         matched, v, i = recognize(grammar["<character1>"], "abcd")
         @test matched = true
-        @test v == "a"
+        @test v == 'a'
         @test i== 2
     end
     let
@@ -173,6 +173,24 @@ BNFGrammar(:TestGrammar)
                                                     BNFRef(:TestGrammar, "<xs>")));
                               add_to_grammar=false)
         @test nodeeq(v, want)
+    end
+end
+
+
+@testset "Test generated BNF grammar" begin
+    # Make sure each derivation matches the hand coded grammar.
+    ignore_keys = ["<EOL>"]
+    bootstrap_grammar = AllGrammars[:BootstrapBNFGrammar]
+    bnf_grammar = AllGrammars[:BNF]
+    for key in union(keys(bootstrap_grammar.derivations),
+                     keys(bnf_grammar.derivations))
+        if key in ignore_keys
+            continue
+        end
+        println(key)
+        dr1 = bootstrap_grammar[key]
+        dr2 = bnf_grammar[key]
+        @test nodeeq(dr1, dr2)
     end
 end
 
