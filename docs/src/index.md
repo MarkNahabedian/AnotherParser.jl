@@ -131,7 +131,7 @@ DerivationRule(
 DerivationRule(
     :example,
     "word",
-    StringCollector(BNFRef(:example, "word1")))
+    BNFRef(:example, "word1")).constructor = substring_constructor_function
 
 # "word1" is a sequence of letters:
 DerivationRule(
