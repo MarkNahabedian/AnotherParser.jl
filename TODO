@@ -1,5 +1,11 @@
 TODO:
 
+In debug_parser, click to get to closing record of a block.
+
+Make sure method signatures of debug_parsing correspond with those of
+recognize and recognize1.  Or maybe add a debug keyarg to the regular
+functions.
+
 We need an easier way to write constructor functions.
 
 Write unit tests for all example grammars.
