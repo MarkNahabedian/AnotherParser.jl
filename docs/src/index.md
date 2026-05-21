@@ -10,6 +10,8 @@ AnotherParser allows one to implement a recursive descent parser given
 a hierarchical grammar expressed as
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
+ISO EBNF is not yet supported.
+
 
 ## Grammars
 
@@ -169,12 +171,29 @@ Until I write more documentation, see the example grammars in the
 `examples` directory.
 
 
+Additional examples are available in the `./examples` directory.  This
+includes an a grammar for parsing SemVer semantic version number
+format and a grammar for BNF as specified on the 
+[`Wikipedia BNF page`](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
+
+
 ## Debugging
 
 ```@docs
 debug_parsing
 DEBUG_BNFNODES
 ```
+
+## The Grammar for BNF
+
+The grammar for BNF itself is specified as BNF.  The file
+`./examples/BNF/bnf.jl` implements two BNF grammars.
+`:BootstrapBNFGrammar` is a grammar that is hand coded using
+[`BNFNode`](@ref) types.  `:BNF` is automatically built by the
+`:BootstrapBNFGrammar` grammar.
+
+There is some machinery to orchestrate that.  I won't decribe it here.
+I hope the implementation is clear enough.
 
 
 ## Index
