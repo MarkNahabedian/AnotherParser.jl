@@ -86,19 +86,61 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
 end
 
 
+is_parse_start(log_entry) =
+    haskey(log_entry.kwargs, :trying)
+
+is_cache_hit(log_entry) =
+    haskey(log_entry.kwargs, :cacheed_result)
+
+is_recursion(log_entry) =
+    get(log_entry.kwargs, :infinite_recursion, false)
+
+is_match(log_entry) =
+    haskey(log_entry.kwargs, :matched)
+
+is_parse_end(log_entry) =
+    is_cache_hit(log_entry) ||
+    is_match(log_entry) ||
+    is_recursion(log_entry)
+
+
+function match_log_records(logger::TestLogger)
+    # Match log records by call_counter:
+    call_counter_index = Dict()
+    for i in 1 : length(logger.logs)
+        lr = logger.logs[i]
+        cc = lr.kwargs[:call_counter]
+        if !haskey(call_counter_index, cc)
+            call_counter_index[cc] = []
+        end
+        push!(call_counter_index[cc], i)
+    end
+    # Match the end record to the start record:
+    start_to_end = Dict()
+    for cc_match in values(call_counter_index)
+        start = nothing
+        fin = nothing
+        for i in cc_match
+            if is_parse_start(logger.logs[i])
+                start = i
+            end
+            if is_parse_end(logger.logs[i])
+                fin = i
+            end
+        end
+        if start != nothing && fin != nothing
+            start_to_end[start] = fin
+        end
+    end
+    start_to_end
+end
+
+
 function process_and_report_parser_debug_log(grammar, rulename, input, logger, report_file)
     report_file = abspath(report_file)
-    is_parse_start(log_entry) =
-        haskey(log_entry.kwargs, :trying)
-    is_cache_hit(log_entry) =
-        haskey(log_entry.kwargs, :cacheed_result)
-    is_recursion(log_entry) =
-        get(log_entry.kwargs, :infinite_recursion, false)
-    is_match(log_entry) =
-        haskey(log_entry.kwargs, :matched)
-    is_parse_end(log_entry) = is_cache_hit(log_entry) || is_match(log_entry) || is_recursion(log_entry)
     # Match logging records by call_counter and infer hierarchy:
     log_index_stack = []
+    start_end_index = match_log_records(logger)
     log_entry_children = Dict{Int64, Vector{Int64}}()  # log entry index => [ log entry index ]
     for index in 1 : length(logger.logs)
         log_entry = logger.logs[index]
@@ -118,6 +160,34 @@ function process_and_report_parser_debug_log(grammar, rulename, input, logger, r
     end
     # global LOG_ENTRY_CHILDREN = log_entry_children
     # Write the HTML file:
+    function conclusion_html(log_entry)
+        if is_parse_start(log_entry)
+            [ ]
+        elseif is_cache_hit(log_entry)
+            [ Element("div",
+                      Text(escape("cahched result: $(log_entry.kwargs[:cacheed_result])"));
+                      class="result")
+              ]
+        elseif is_recursion(log_entry)
+            [ Element("div",
+                      Text(escape("RECURSION!")))
+              ]
+        elseif is_match(log_entry)
+            if log_entry.kwargs[:matched]
+                [ Element("div",
+                          Text(escape("result: $(log_entry.kwargs[:v])"));
+                          class="result")
+                  ]
+            else
+                [ Element("div",
+                          Text("NO MATCH");
+                          class="result")
+                  ]
+            end
+        else
+            error("unhandled log entry $log_entry")
+        end
+    end
     function log_tree(log_index)
         log_entry = logger.logs[log_index]
         Element("div",
@@ -136,30 +206,21 @@ function process_and_report_parser_debug_log(grammar, rulename, input, logger, r
                         title= "node description",
                         class="node-pretty"),
                 if is_parse_start(log_entry)
-                    []
-                elseif is_cache_hit(log_entry)
-                    [ Element("div",
-                              Text(escape("cahched result: $(log_entry.kwargs[:cacheed_result])"));
-                              class="result")
-                      ]
-                elseif is_recursion(log_entry)
-                    [ Element("div",
-                              Text(escape("RECURSION!")))
-                      ]
-                elseif is_match(log_entry)
-                    if log_entry.kwargs[:matched]
-                        [ Element("div",
-                                  Text(escape("result: $(log_entry.kwargs[:v])"));
-                                  class="result")
-                          ]
+                    if haskey(start_end_index, log_index)
+                        let
+                            end_record = logger.logs[start_end_index[log_index]]
+                            [start_end_index[log_index]]
+                            [
+                                Element("div",
+                                        conclusion_html(end_record)...;
+                                        class="node-result")
+                            ]
+                        end
                     else
-                        [ Element("div",
-                                  Text("NO MATCH");
-                                  class="result")
-                          ]
+                        []
                     end
                 else
-                    error("unhandled log entry $log_entry")
+                    conclusion_html(log_entry)
                 end...,
                 map(get(log_entry_children, log_index, [])) do child_index
                     if child_index == log_index
