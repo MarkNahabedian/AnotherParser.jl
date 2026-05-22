@@ -71,6 +71,29 @@ document.addEventListener('DOMContentLoaded', (event) => {
 });
 """
 
+
+"""
+    should_enable_debug_logging_for(node::BNFNode)
+
+The default value for the `enable_debug_logging_for` keyword argument
+to [`debug_parsing`](@ref).
+
+It avoids logging of [`CharacterLiteral`](@ref) nodes and of
+[`Alternatives`](@ref) nodes where every alternative is a
+`CharacterLiteral node.
+"""
+function should_enable_debug_logging_for(node::BNFNode)
+    # Don't enable logging for tedious nodes:
+    if node isa Alternatives && all(n -> n isa CharacterLiteral, node.alternatives)
+        false
+    elseif node isa CharacterLiteral
+        false
+    else
+        true
+    end
+end
+
+
 function debug_parsing(grammar::Symbol, rulename::AbstractString,
                        input::AbstractString; keyargs...)
     debug_parsing(AllGrammars[grammar], rulename, input; keyargs...)
@@ -78,29 +101,29 @@ end
 
 
 """
-    debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; index = 1, finish = length(input), context=nothing, report_file::AbstractString)
+    debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; index = 1, finish = length(input), context=nothing, report_file::AbstractString, enable_debug_logging_for = should_enable_debug_logging_for)
 
 Run the parser specified by `grammar` and `rulename` to parse `input`
 from `index` to `finish` with the specified `context` object.  The
 parsing log is written to `report_file` as HTML.  That file presents a
 hierarchichal view of how the parse progressed.
+
+enable_debug_logging_for is a function that takes a `BNFNode` as
+argument and returns true if that node should be tracked in the info
+log and false otherwise.
 """
 function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                        input::AbstractString;
                        index = 1, finish = length(input), context=nothing,
-                       report_file::AbstractString)
+                       report_file::AbstractString,
+                       enable_debug_logging_for = should_enable_debug_logging_for)
     logger = TestLogger()
     parser = Parser()
     let                      # set DEBUG_BNFNODES
         debug_uids = Set()
         for rule in values(grammar.derivations)
             walk_nodes(rule) do node
-                # Done enable logging for tedious nodes:
-                if node isa Alternatives && all(n -> n isa CharacterLiteral, node.alternatives)
-                    # ignore
-                elseif node isa CharacterLiteral
-                    #ignore
-                else
+                if enable_debug_logging_for(node)
                     push!(debug_uids, node.uid)
                 end
             end
