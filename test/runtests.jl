@@ -179,6 +179,13 @@ end
     end
     let
         matched, v, i = recognize(Repeat(CharacterLiteral('a')),
+                                  "aaa")
+        @test matched == true
+        @test v == ['a', 'a', 'a']
+        @test i == 4
+    end
+    let
+        matched, v, i = recognize(Repeat(CharacterLiteral('a')),
                                   "aaab")
         @test matched == true
         @test v == ['a', 'a', 'a']
@@ -204,9 +211,7 @@ include("../examples/BNF/test_bnf_grammar.jl")
 
 include("../examples/Arithmetic/test_arithmetic_grammar.jl")
 
-#=
 include("../examples/XML/includes.jl")
 include("../examples/XML/JuliaComputing_XML_factory.jl")
 include("../examples/XML/test_xml_grammar.jl")
-=#
 
