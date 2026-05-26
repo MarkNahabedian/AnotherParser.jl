@@ -5,6 +5,8 @@ export check_references
 
 Warn of any BNFRef nodes in the grammar that don't have a target.
 Return true if there are any issues.
+
+Returns `true` if any warnings were issued.
 """
 function check_references(g::BNFGrammar)
     err= false
@@ -18,6 +20,8 @@ check_references(name::Symbol) = check_references(AllGrammars[name])
 
 check_references(::Empty) = false
 check_references(::CharacterLiteral) = false
+check_references(::CharacterInSet) = false
+check_references(::CharacterSatisfiesPredicate) = false
 check_references(::StringLiteral) = false
 check_references(::RegexNode) = false
 check_references(::Constructor) = false
@@ -52,4 +56,16 @@ function check_references(n::Alternatives)
     end
     err
 end
+
+function check_references(n::Repeat)
+    err = false
+    err = check_references(n.node)
+    err
+end
+
+function check_references(n::Excluding)
+    check_references(n.exclude) || check_references(n.match)
+end
+
+check_references(n::CharacterSatisfiesPredicate) = false
 

@@ -1,6 +1,8 @@
-export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat, NonTerminal,
-    CharacterLiteral, StringLiteral, RegexNode, Constructor
-export BNFRef, recognize, pretty, is_left_recursive, logReductions, loggingReductions
+export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat,
+    NonTerminal, CharacterLiteral, CharacterInSet,
+    CharacterSatisfiesPredicate, StringLiteral, RegexNode,
+    Constructor, BNFRef, Excluding
+export recognize, pretty, is_left_recursive, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
 export walk_nodes, print_uid_index, identity_constructor_function,
@@ -204,7 +206,7 @@ is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
     result = []
     in = index
     while true
-        if length(result) == n.max
+        if length(result) >= n.max
             break
         end
         matched, v, i = recognize1(p, n.node, input, in, finish, context)                    
@@ -212,7 +214,13 @@ is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
             break
         end
         push!(result, v)
+        if i == in
+            error("Input index failed to advance from $i in $n")
+        end
         in = i
+        if i > finish
+            break
+        end
     end
     if n.min > length(result)
         return false, nothing, index
@@ -242,6 +250,61 @@ pretty(n::CharacterLiteral) = *("CharacterLiteral('",
     end
     c = input[index]
     if c == n.character
+        return true, c, index + 1
+    end
+    return false, nothing, index
+end
+
+
+"""
+    CharacterInSet(set)
+
+Matches any single character in `set`.
+"""
+@bnfnode struct CharacterInSet <: BNFNode
+    chars::Set{Char}
+
+    CharacterInSet(v::Vector) = new(Set(v))
+
+    CharacterInSet(s::Set) = new(s)
+end
+
+pretty(n::CharacterInSet) = *("CharacterInSet([",
+                                n.chars...,
+                                "])")
+
+@trace trace_recognize function recognize(p::Parser, n::CharacterInSet,
+                                          input::AbstractString, index::Int, finish::Int,
+                                          context::Any)
+    if exhausted(input, index, finish)
+        return false, nothing, index
+    end
+    c = input[index]
+    if c in n.chars
+        return true, c, index + 1
+    end
+    return false, nothing, index
+end
+
+
+"""
+    CharacterSatisfiesPredicate(predicate::Function)
+
+Matches any single character that `predicate` returns true for.
+"""
+@bnfnode struct CharacterSatisfiesPredicate <: BNFNode
+    predicate::Function
+end
+
+pretty(n::CharacterSatisfiesPredicate) = *("CharacterSatisfiesPredicate(",
+                                           string(n.predicate),
+                                           ")")
+
+@trace trace_recognize function recognize(p::Parser, n::CharacterSatisfiesPredicate,
+                                          input::AbstractString, index::Int, finish::Int,
+                                          context::Any)
+    c = input[index]
+    if n.predicate(c)
         return true, c, index + 1
     end
     return false, nothing, index
@@ -302,6 +365,9 @@ pretty(n::RegexNode) = *("RegexNode(",
                                           context::Any)
     m = match(n.re, input, index)
     if m == nothing
+        return false, nothing, index
+    end
+    if m.offset != index
         return false, nothing, index
     end
     if m.offset != index
@@ -532,6 +598,34 @@ is_left_recursive(node::BNFRef, grammar::Symbol, name::AbstractString) =
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     recognize1(p, n.target, input, index, finish, context)
+end
+
+
+"""
+    Excluding(exclude, match)
+
+Match if the current input matches `match`, but ofly if it does not
+match `exclude`.
+"""
+@bnfnode struct Excluding <:BNFNode
+    exclude::BNFNode
+    match::BNFNode
+end
+
+pretty(n::Excluding) = *("Excluding(", pretty(n.exclude), " ", pretty(n.match), ")")
+
+is_left_recursive(node::Excluding, grammar::Symbol, name::AbstractString) =
+    is_left_recursive(node.exclude, grammar, name) ||
+    is_left_recursive(node.match, grammar, name)
+
+@trace trace_recognize function recognize(p::Parser, n::Excluding,
+                                          input::AbstractString, index::Int, finish::Int,
+                                          context::Any)
+    matched, v, i = recognize1(p, n.exclude, input, index, finish, context)
+    if matched
+        return false, nothing, i
+    end
+    recognize1(p, n.match, input, index, finish, context)
 end
 
 
