@@ -215,6 +215,9 @@ is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
         end
         push!(result, v)
         if i == in
+            if length(result) >= n.min
+                return true, result, in
+            end
             error("Input index failed to advance from $i in $n")
         end
         in = i
@@ -250,7 +253,7 @@ pretty(n::CharacterLiteral) = *("CharacterLiteral('",
     end
     c = input[index]
     if c == n.character
-        return true, c, index + 1
+        return true, c, nextind(input, index, 1)
     end
     return false, nothing, index
 end
@@ -281,7 +284,7 @@ pretty(n::CharacterInSet) = *("CharacterInSet([",
     end
     c = input[index]
     if c in n.chars
-        return true, c, index + 1
+        return true, c, nextind(input, index, 1)
     end
     return false, nothing, index
 end
@@ -305,7 +308,7 @@ pretty(n::CharacterSatisfiesPredicate) = *("CharacterSatisfiesPredicate(",
                                           context::Any)
     c = input[index]
     if n.predicate(c)
-        return true, c, index + 1
+        return true, c, nextind(input, index, 1)
     end
     return false, nothing, index
 end
@@ -318,6 +321,11 @@ Matches the string `str`.
 """
 @bnfnode struct StringLiteral <: BNFNode
     str::AbstractString
+
+    function StringLiteral(str::AbstractString)
+        @assert length(str) > 0
+        new(str)
+    end
 end
 
 pretty(n::StringLiteral) = *("StringLiteral(\"",
@@ -333,13 +341,14 @@ pretty(n::StringLiteral) = *("StringLiteral(\"",
         return false, nothing, index
     end
     =#
-    end_inclusive = index + lastindex(n.str) - firstindex(n.str)
+    end_inclusive = nextind(input, index, length(n.str) - 1)
     if exhausted(input, end_inclusive, finish)
         return false, nothing, index
     end
-    ss = SubString(input, index, end_inclusive)
-    if n.str == ss
-        return true, ss, index + length(n.str)
+    if startswith(SubString(input, index), n.str)
+        return (true,
+                SubString(input, index, end_inclusive),
+                nextind(input, index, length(n.str)))
     end
     return false, nothing, index
 end
@@ -373,7 +382,7 @@ pretty(n::RegexNode) = *("RegexNode(",
     if m.offset != index
         return false, nothing, index
     end
-    return true, m, index + length(m.match)
+    return true, m, nextind(input, index, length(m.match))
 end
 
 
