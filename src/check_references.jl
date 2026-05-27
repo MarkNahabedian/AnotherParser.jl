@@ -67,5 +67,4 @@ function check_references(n::Excluding)
     check_references(n.exclude) || check_references(n.match)
 end
 
-check_references(n::CharacterSatisfiesPredicate) = false
 
