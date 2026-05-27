@@ -23,6 +23,11 @@ end
 
 Parse `str` as BNF and add those productions to the grammar named
 `grammar_name`.
+
+Since bnf_str is used to define the BNF grammar itself, and it's
+convenient to have the BNF strings near the hand coded BNF grammar,
+there's a bootstraping mode which defers parsing of `str` until a BNF
+grammar is available.
 """
 macro bnf_str(str, grammar_name)
     grammar_name = Symbol(grammar_name)
