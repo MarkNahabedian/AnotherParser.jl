@@ -1,7 +1,10 @@
+
 body {
-     font-family: sans-serif;
+    font-family: sans-serif;
+    padding-bottom: 2ex;
 }
 div.input-text {
+    white-space: pre;
     font-family: monospace;
     border: solid 3px;
     margin-top: 1ex;
