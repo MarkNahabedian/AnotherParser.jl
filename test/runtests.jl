@@ -59,11 +59,17 @@ end
                                   "abzd"; index = 4, finish = 3)
         @test matched == false
         @test i == 4
-        #test v == nothing
+        @test v == nothing
     end
 end
 
 @testset "test StringLiteral" begin
+    let
+        matched, v, i = recognize(StringLiteral(""), "abcd")
+        @test matched == true
+        @test v == ""
+        @test i == 1
+    end
     let
         matched, v, i = recognize(StringLiteral("abc"),
                                   "abcd")
@@ -86,24 +92,27 @@ end
         @test v == nothing
     end
     let
-        matched, v, i = recognize(StringLiteral(""),
-                                  "abcd")
+        matched, v, i = recognize(Sequence(StringLiteral("bcd"),
+                                           StringLiteral("efg")),
+                                  "abcdefghi"; index = 2, finish = 7)
         @test matched == true
-        @test i == 1
-        @test v == ""
+        @test i == 8
+        @test v == ["bcd", "efg"]
     end
-    #=
+    # Test when there are larger characters encoded in Julia's
+    # standard UTF-8:
     let
-        # Empty string should not match if input is exhausted:
-        r = recognize(StringLiteral(""),
-                      "abcd"; index=5)
-        matched, v, i = recognize(StringLiteral(""),
-                                  "abcd"; index=5)
-        @test matched == false
-        @test i == 5
-        @test v == nothing
+        input = "abcd" * Char(0x1F4A9) * "efghi"
+        seek = SubString(input, 1, 9)
+        matched, v, i = recognize(StringLiteral(seek), input)
+        @test matched == true
+        @test i == 10
+        @test v == seek
+        matched, v, i = recognize(StringLiteral("fghi"), input; index = i)
+        @test matched == true
+        @test i == 14
+        @test v == "fghi"
     end
-    =#
 end
 
 @testset "test RegexNode" begin

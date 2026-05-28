@@ -321,11 +321,6 @@ Matches the string `str`.
 """
 @bnfnode struct StringLiteral <: BNFNode
     str::AbstractString
-
-    function StringLiteral(str::AbstractString)
-        @assert length(str) > 0
-        new(str)
-    end
 end
 
 pretty(n::StringLiteral) = *("StringLiteral(\"",
@@ -335,6 +330,15 @@ pretty(n::StringLiteral) = *("StringLiteral(\"",
 @trace trace_recognize function recognize(p::Parser, n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
+    if length(n.str) == 0
+        return true, n.str, index
+    end
+    if index > finish
+        return false, nothing, index
+    end
+    if nextind(input, index, length(n.str) - 1) > finish
+        return false, nothing, index
+    end
     if startswith(SubString(input, index), n.str)
         return (true,
                 n.str,
