@@ -36,6 +36,10 @@ function should_enable_debug_logging_for(node::BNFNode)
 end
 
 
+debug_parsing(node::BNFNode, input; keyargs...) =
+    debug_parsing(AllGrammars[node.grammar_name], node.name,
+                  input; keyargs...)
+
 function debug_parsing(grammar::Symbol, rulename::AbstractString,
                        input::AbstractString; keyargs...)
     debug_parsing(AllGrammars[grammar], rulename, input; keyargs...)
@@ -109,6 +113,9 @@ function match_log_records(logger::TestLogger)
     call_counter_index = Dict()
     for i in 1 : length(logger.logs)
         lr = logger.logs[i]
+        if !haskey(lr.kwargs, :call_counter)
+            continue
+        end
         cc = lr.kwargs[:call_counter]
         if !haskey(call_counter_index, cc)
             call_counter_index[cc] = []
@@ -235,17 +242,18 @@ function process_and_report_parser_debug_log(grammar, rulename, input, logger, r
     # global LOG_ENTRIES = logger.logs
     doc = Document(
         Element("head",
-                Element("style",
-                        PARSER_DEBUG_CSS),
-                Element("script",
-                        PARSER_DEBUG_SCRIPT)),
-        Element("body",
-                Element("h1",
-                        Text(grammar.name), Text(" "), Text(escape(rulename))),
-                Text("Parsing:"),
-                Element("div", Text(escape(input));
-                        class="input-text"),
-                log_tree(minimum(keys(log_entry_children)))))
+                Element("head",
+                        Element("style",
+                                PARSER_DEBUG_CSS),
+                        Element("script",
+                                PARSER_DEBUG_SCRIPT)),
+                Element("body",
+                        Element("h1",
+                                Text(grammar.name), Text(" "), Text(escape(rulename))),
+                        Text("Parsing:"),
+                        Element("div", Text(escape(input));
+                                class="input-text"),
+                        log_tree(minimum(keys(log_entry_children))))))
     open(report_file, "w") do io
         XML.write(io, doc)
     end
