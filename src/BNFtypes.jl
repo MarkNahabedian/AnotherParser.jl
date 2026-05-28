@@ -335,19 +335,9 @@ pretty(n::StringLiteral) = *("StringLiteral(\"",
 @trace trace_recognize function recognize(p::Parser, n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
-    #=
-    # Don't match "" at the end of input:
-    if n.str == "" && exhausted(input, index, finish)
-        return false, nothing, index
-    end
-    =#
-    end_inclusive = nextind(input, index, length(n.str) - 1)
-    if exhausted(input, end_inclusive, finish)
-        return false, nothing, index
-    end
     if startswith(SubString(input, index), n.str)
         return (true,
-                SubString(input, index, end_inclusive),
+                n.str,
                 nextind(input, index, length(n.str)))
     end
     return false, nothing, index
@@ -549,7 +539,9 @@ is_left_recursive(node::DerivationRule, grammar::Symbol, name::AbstractString) =
     if !matched
         return false, v, i
     end
-    v2 = n.constructor(context, input, index, i - 1, v)
+    v2 = n.constructor(context, input, index,
+                       prevind(input, i, 1),
+                       v)
     if logReductions
         @info "$index: constructor for $(n.name) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
