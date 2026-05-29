@@ -5,8 +5,7 @@ export BNFNode, EndOfInput, Empty, Sequence, Alternatives, Repeat,
 export recognize, pretty, is_left_recursive, logReductions, loggingReductions
 export BNFGrammar, DerivationRule
 export AllGrammars
-export walk_nodes, print_uid_index, identity_constructor_function,
-    substring_constructor_function
+export walk_nodes, print_uid_index
 
 using NahaJuliaLib
 
@@ -471,24 +470,6 @@ AllGrammars = Dict{Symbol, BNFGrammar}()
 function Base.getindex(grammar::BNFGrammar, nonterminal)
     grammar.derivations[nonterminal]
 end
-
-
-"""
-    identity_constructor_function(context, input::AbstractString, from::Int, to::Int, value)
-
-A constructor function that just returns the raw value from its
-associated DerivationRule or subexpression.
-"""
-identity_constructor_function(context, input::AbstractString, from::Int, to::Int, value) = value
-
-
-"""
-    substring_constructor_function(context, input::AbstractString, from::Int, to::Int, value)
-
-A constructor function that ruturns the matched substring.
-"""
-substring_constructor_function(context, input::AbstractString, from::Int, to::Int, value) =
-    SubString(input, from, to)
 
 
 """
