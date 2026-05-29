@@ -19,9 +19,7 @@ using XML
     end
     let
         text = "foo bar baz"
-        matched, v, i = debug_parsing(grammar, "Nmtokens", text, context=factory;
-                                      report_file="../xml_Names_debug.html",
-                                      enable_debug_logging_for=n->true)
+        matched, v, i = recognize(grammar["Nmtokens"], text, context=factory)
         @test matched = true
         @test i == length(text) + 1
         @test v == [ "foo", "bar", "baz" ]
@@ -57,9 +55,10 @@ using XML
     let
         xml_text = "<foo attr='yowza'>The sixth sick sheik's sixth sheep's sick.</foo>"
         matched, v, i =
-            recognize(grammar["element"],
-                      xml_text;
-            context=factory)
+            debug_parsing(grammar["element"], xml_text;
+                          report_file="yowza.html",
+                          enable_debug_logging_for = _ -> true,
+                          context=factory)
         @test matched = true
         @test i == length(xml_text) + 1
         expecting = XML.Element("foo",
