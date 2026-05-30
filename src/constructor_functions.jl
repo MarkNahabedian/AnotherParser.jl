@@ -1,5 +1,6 @@
 
 export identity_constructor_function, substring_constructor_function,
+    value_is_from_index, value_is_to_index,
     deep_flatten, flattening_constructor_function
 
 
@@ -19,6 +20,26 @@ A constructor function that ruturns the matched substring.
 """
 substring_constructor_function(context, input::AbstractString, from::Int, to::Int, value) =
     SubString(input, from, to)
+
+
+"""
+    value_is_from_index(context, input::AbstractString, from::Int, to::Int, value)
+
+Uses the `from` index as the constructor value for the associated
+node.  This is useful if some higher BNFNode will be using `SubString`
+to construct its value.
+"""
+value_is_from_index(context, input::AbstractString, from::Int, to::Int, value) = from
+
+
+"""
+    value_is_to_index(context, input::AbstractString, from::Int, to::Int, value) = to
+
+Uses the `to` index as the constructor value for the associated node.
+This is useful if some higher BNFNode will be using `SubString` to
+construct its value.
+"""
+value_is_to_index(context, input::AbstractString, from::Int, to::Int, value) = to
 
 
 """
