@@ -732,7 +732,7 @@ DerivationRule(:XML, "AttType",
 #[55]  https://www.w3.org/TR/xml/#NT-StringType
 #  StringType  ::=  'CDATA'
 DerivationRule(:XML, "StringType",
-               StringLiteral("StringType"))
+               StringLiteral("CDATA"))
 
 # [56]  https://www.w3.org/TR/xml/#NT-TokenizedType
 # TokenizedType  ::=  'ID' | 'IDREF' | 'IDREFS' | 'ENTITY' | 'ENTITIES' | 'NMTOKEN' | 'NMTOKENS'
