@@ -4,7 +4,7 @@
 BNFGrammar(:XML)
 
 # [1]  https://www.w3.org/TR/xml/#NT-document
-# document	   ::=   	prolog element Misc*
+# document  ::=  prolog element Misc*
 DerivationRule(:XML, "document",
                Sequence(BNFRef(:XML, "prolog"),
                         BNFRef(:XML, "element"),
@@ -15,7 +15,7 @@ DerivationRule(:XML, "document",
                end
 
 # [2]  https://www.w3.org/TR/xml/#NT-Char
-# Char	   ::=   	#x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+# Char  ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 
 function is_xml_char(c)
     (codepoint(c) == 0x9
@@ -30,7 +30,7 @@ DerivationRule(:XML, "Char",
                CharacterSatisfiesPredicate(is_xml_char))
 
 # [3]  https://www.w3.org/TR/xml/#NT-S
-# S	   ::=   	(#x20 | #x9 | #xD | #xA)+
+# S  ::=  (#x20 | #x9 | #xD | #xA)+
 DerivationRule(:XML, "S",
                Repeat(Alternatives(
                    CharacterLiteral(Char(0x20)),
@@ -86,14 +86,14 @@ DerivationRule(:XML, "NameChar",
                CharacterSatisfiesPredicate(is_xml_name_char))
                                 
 # [5]  https://www.w3.org/TR/xml/#NT-Name
-# Name	::=  NameStartChar (NameChar)*
+# Name  ::=  NameStartChar (NameChar)*
 DerivationRule(:XML, "Name",
                Sequence(BNFRef(:XML, "NameStartChar"),
                         Repeat(BNFRef(:XML, "NameChar")))
                ).constructor = substring_constructor_function
 
 # [6]  https://www.w3.org/TR/xml/#NT-Names
-# Names	 ::=  Name (#x20 Name)*
+# Names  ::=  Name (#x20 Name)*
 
 ignore_leading_separator_constructor_function(context, input::AbstractString,
                                               from::Int, to::Int, value) =
@@ -164,14 +164,14 @@ DerivationRule(:XML, "AttValue",
                end
 
 # [11]  https://www.w3.org/TR/xml/#NT-SystemLiteral
-# SystemLiteral	 ::=  ('"' [^"]* '"') | ("'" [^']* "'")
+# SystemLiteral  ::=  ('"' [^"]* '"') | ("'" [^']* "'")
 DerivationRule(:XML, "SystemLiteral",
                Alternatives(
                    RegexNode(r"\"[^\"]*\""),
                    RegexNode(r"'[^']*'")))
 
 # [12]  https://www.w3.org/TR/xml/#NT-PubidLiteral
-# PubidLiteral	::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
+# PubidLiteral::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
 DerivationRule(:XML, "PubidLiteral",
                Alternatives(
                    Sequence(CharacterLiteral('"'),
@@ -282,7 +282,7 @@ DerivationRule(:XML, "CData",
                ).constructor = substring_constructor_function
 
 # [21]  https://www.w3.org/TR/xml/#NT-CDEnd
-# CDEnd  ::=   	']]>'
+# CDEnd  ::=  ']]>'
 DerivationRule(:XML, "CDEnd",
                StringLiteral("]]>"))
 
@@ -297,7 +297,10 @@ DerivationRule(:XML, "prolog",
                            BNFRef(:XML, "doctypedecl"),
                            Repeat(BNFRef(:XML, "Misc")));
                        max=1))
-               ).constructor = flattening_constructor_function
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   [ value[1], map(seq -> seq[1], value[3]) ]
+               end
 
 # [23]  https://www.w3.org/TR/xml/#NT-XMLDecl
 # XMLDecl  ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
@@ -364,27 +367,28 @@ DerivationRule(:XML, "doctypedecl",
                Sequence(
                    StringLiteral("<!DOCTYPE"),
                    BNFRef(:XML, "S"),
-                   BNFRef(:XML, "Name"),
+                   Constructor(BNFRef(:XML, "Name"),
+                               value_is_from_index),
                    Repeat(
                        Sequence(
                            BNFRef(:XML, "S"),
                            BNFRef(:XML, "ExternalID"));
                        max=1),
                    Repeat(BNFRef(:XML, "S"); max=1),
-                   Repeat(
-                       Sequence(
-                           CharacterLiteral('['),
-                           BNFRef(:XML, "intSubset"),
-                           CharacterLiteral(']'),
-                           Repeat(BNFRef(:XML, "S"); max=1));
-                       max=1),
+                   Constructor(
+                       Repeat(
+                           Sequence(
+                               CharacterLiteral('['),
+                               BNFRef(:XML, "intSubset"),
+                               CharacterLiteral(']'),
+                               Repeat(BNFRef(:XML, "S"); max=1));
+                           max=1),
+                       value_is_to_index),
                    CharacterLiteral('>'))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
                    xmlDTD(context,
-                          SubString(input,
-                                    nextind(input, from, length(first(value))),
-                                    prevind(input, to, length(last(value)))))
+                          SubString(input, value[3], value[6]))
                end
 
 # [28a]  https://www.w3.org/TR/xml/#NT-DeclSep
@@ -551,12 +555,12 @@ DerivationRule(:XML, "ETag",
                    ).constructor = function (context, input::AbstractString,
                                              from::Int, to::Int, value)
                        content = []
-                       if !isempty(value[1])
+                       if !isempty(value[1]) && !isempty(value[1][1])
                            push!(content, value[1][1])
                        end
                        for (a, cd) in value[2]
                            push!(content, a)
-                           if !isempty(cd)
+                           if !isempty(cd) && !isempty(cd[1][1])
                                push!(content, cd[1])
                            end
                        end
