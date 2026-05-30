@@ -12,11 +12,11 @@ struct JuliaComputingXMLFactory <: AbstractXMLFactory end
 
 
 function xmlDocument(::JuliaComputingXMLFactory, prolog, root_element)
-    XML.Document(prolog, root_element)
+    XML.Document(prolog[1]..., prolog[2]..., root_element)
 end
 
 function xmlDTD(::JuliaComputingXMLFactory, dtd::AbstractString)
-    XML.DTD(dtd)
+    Node(XML.DTD, nothing, nothing, dtd, nothing)
 end
 
 function xmlComment(::JuliaComputingXMLFactory, comment::AbstractString)
