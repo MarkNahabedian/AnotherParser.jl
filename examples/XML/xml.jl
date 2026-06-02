@@ -232,7 +232,8 @@ DerivationRule(:XML, "Comment",
 # PI  ::=  '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
 DerivationRule(:XML, "PI",
                Sequence(StringLiteral("<?"),
-                        BNFRef(:XML, "PITarget"),
+                        Constructor(BNFRef(:XML, "PITarget"),
+                                    value_is_from_index),
                         Repeat(
                             Sequence(BNFRef(:XML, "S"),
                                      Excluding(
@@ -241,11 +242,13 @@ DerivationRule(:XML, "PI",
                                                   Repeat(BNFRef(:XML, "Char"))),
                                          Repeat(BNFRef(:XML, "Char"))));
                             max=1),
-                        StringLiteral("?>"))
+                        Constructor(StringLiteral("?>"),
+                                    value_is_from_index))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   ("<?", value[2],
-                    map(seq -> join(seq), value[3]))
+                   xmlProcessingInstruction(context,
+                                            SubString(input, value[2],
+                                                      prevind(input, value[4], 1)))
                end
 
 # [17]  https://www.w3.org/TR/xml/#NT-PITarget

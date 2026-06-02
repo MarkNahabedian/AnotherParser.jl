@@ -51,3 +51,7 @@ function xmlEntityRef(::JuliaComputingXMLFactory, name::AbstractString)
     @sprintf("&%s;", name)
 end
 
+function xmlProcessingInstruction(::JuliaComputingXMLFactory, pi)
+    Node(XML.ProcessingInstruction, pi, nothing, nothing, nothing)
+end
+

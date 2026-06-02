@@ -2,7 +2,8 @@
 # will use to construct an XML document.
 
 export AbstractXMLFactory, xmlDocument, xmlDTD, xmlComment, xmlText,
-    xmlElement, xmlEntityRef, xmlPEReference, xmlCharReference
+    xmlElement, xmlEntityRef, xmlPEReference, xmlCharReference,
+    xmlProcessingInstruction
 
 abstract type AbstractXMLFactory end
 
@@ -87,3 +88,6 @@ function xmlCharReference(factory::AbstractXMLFactory, charcode::Int)
     unsupported_xml(factory, xmlCharReference, charcode)
 end
 
+function xmlProcessingInstruction(factory::AbstractXMLFactory, pi)
+    unsupported_xml(factory, xmlProcessingInstruction, pi)
+end
