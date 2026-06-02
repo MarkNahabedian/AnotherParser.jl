@@ -1,5 +1,6 @@
 
 using XML
+using Printf
 
 
 """
@@ -37,6 +38,16 @@ function xmlElement(::JuliaComputingXMLFactory,
                 attributes...)
 end
 
-xmlCharReference(::JuliaComputingXMLFactory, charcode::Int) = Char(charcode)
+function xmlCharReference(::JuliaComputingXMLFactory, charcode::Int, ishex)
+    # XML.jl leaves the character reference as is.
+    if ishex
+        @sprintf("&#x%x;", charcode)
+    else
+        @sprintf("&#%d;", charcode)
+    end
+end
 
+function xmlEntityRef(::JuliaComputingXMLFactory, name::AbstractString)
+    @sprintf("&%s;", name)
+end
 
