@@ -375,20 +375,20 @@ DerivationRule(:XML, "doctypedecl",
                            BNFRef(:XML, "ExternalID"));
                        max=1),
                    Repeat(BNFRef(:XML, "S"); max=1),
-                   Constructor(
-                       Repeat(
-                           Sequence(
-                               CharacterLiteral('['),
-                               BNFRef(:XML, "intSubset"),
-                               CharacterLiteral(']'),
-                               Repeat(BNFRef(:XML, "S"); max=1));
-                           max=1),
-                       value_is_to_index),
-                   CharacterLiteral('>'))
+                   Repeat(
+                       Sequence(
+                           CharacterLiteral('['),
+                           BNFRef(:XML, "intSubset"),
+                           CharacterLiteral(']'),
+                           Repeat(BNFRef(:XML, "S"); max=1));
+                       max=1),
+                   Constructor(CharacterLiteral('>'),
+                               value_is_from_index))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
                    xmlDTD(context,
-                          SubString(input, value[3], value[6]))
+                          SubString(input, value[3],
+                                    prevind(input, value[7], 1)))
                end
 
 # [28a]  https://www.w3.org/TR/xml/#NT-DeclSep
@@ -555,13 +555,17 @@ DerivationRule(:XML, "ETag",
                    ).constructor = function (context, input::AbstractString,
                                              from::Int, to::Int, value)
                        content = []
-                       if !isempty(value[1]) && !isempty(value[1][1])
-                           push!(content, value[1][1])
+                       for cd in value[1]
+                           if length(cd) > 0
+                               push!(content, cd)
+                           end
                        end
                        for (a, cd) in value[2]
                            push!(content, a)
-                           if !isempty(cd) && !isempty(cd[1][1])
-                               push!(content, cd[1])
+                           for cd1 in cd
+                               if length(cd1) > 0
+                                   push!(content, cd1)
+                               end
                            end
                        end
                        content
@@ -885,7 +889,7 @@ DerivationRule(:XML, "CharRef",
                                                    prevind(input, to, 1));
                                     base=10)
                        end
-                   xmlCharReference(context, code)
+                   xmlCharReference(context, code, value["num"][1] == 'x')
                end
 
 
