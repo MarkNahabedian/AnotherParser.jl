@@ -64,7 +64,13 @@ function test_xml_file(factory::AbstractXMLFactory, path)
     if !matched
         println("*** XML parse failed for $path")
     else
-        xmljldoc = read(path, Node)
+        xmljldoc =
+            try
+                read(path, Node)
+            catch e
+                println(stderr, "*** Error using XML.jl parser: ", e)
+                return
+            end
         # compare_docs(xmljldoc, v)
         compare_nodes(xmljldoc, merge_text_nodes(v))
     end
