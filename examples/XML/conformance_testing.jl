@@ -38,8 +38,10 @@ function test_xml_conformance()
     valid_sa = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
     mkpath(joinpath(@__DIR__, "conformance_debugging"))
     for xml in readdir(valid_sa)
-        xml1 = joinpath(valid_sa, xml)
-        test_xml_file(factory, xml1)
+        if last(splitext(xml)) == ".xml"
+            xml1 = joinpath(valid_sa, xml)
+            test_xml_file(factory, xml1)
+        end
     end
 end
 
@@ -51,19 +53,21 @@ JuliaComputing XML.jl parser, and compares the results.
 """
 function test_xml_file(factory::AbstractXMLFactory, path)
     base, _ = splitext(path)
-    report_file= joinpath(@__DIR__, "conformance_debugging", base * ".html")
+    report_file = joinpath(@__DIR__, "conformance_debugging", base * ".html")
     println("Parsing $path")
     matched, v, i = debug_parsing(AllGrammars[:XML]["document"],
                                   read(path, String);
                                   context = factory,
                                   enable_debug_logging_for = n -> true,
-                                  report_file = report_file)
+                                  report_file = report_file
+                                  )
     if !matched
-        println("XML parse failed for $path")
+        println("*** XML parse failed for $path")
+    else
+        xmljldoc = read(path, Node)
+        # compare_docs(xmljldoc, v)
+        compare_nodes(xmljldoc, merge_text_nodes(v))
     end
-    xmljldoc = read(path, Node)
-    # compare_docs(xmljldoc, v)
-    compare_nodes(xmljldoc, v)
 end
 
 function compare_docs(node1::Node, node2::Node)
@@ -76,6 +80,7 @@ function compare_docs(node1::Node, node2::Node)
 end
 
 function compare_nodes(node1::Node, node2::Node)
+    # nodes_equal doesn't say how the nodes differ.
     mismatch = false
     # Check if node types and data (tag names or text content) match
     if nodetype(node1) != nodetype(node2)
@@ -107,8 +112,35 @@ function compare_nodes(node1::Node, node2::Node)
         end
     end
     if mismatch
-        println("NODE DON'T MATCH\n$node1\n$node2\n")
+        println("NODES DON'T MATCH\n$node1\n$node2\n")
     end
 end
 
-
+# Our XML parser, in combination with xmlEntityRef produce a separate
+# child node for each entity reference.  XML.jl combines them into a
+# single Text node.
+#
+# Here we postprocess a parsed XML document to merge successive text
+# elements into one.
+# Because XML.Node is immutable, we need to reconstruct the document
+# tree.
+function merge_text_nodes(parent)
+    new_content = []
+    if parent.children isa Nothing
+        return parent
+    end
+    for child in parent.children
+        if child.nodetype != XML.Text
+            push!(new_content, merge_text_nodes(child))
+            continue
+        end
+        if !isempty(new_content) && last(new_content).nodetype == XML.Text
+            # Merge
+            new_content[lastindex(new_content)] = 
+                XML.Text(last(new_content).value * child.value)
+        else
+            push!(new_content, child)
+        end
+    end
+    Node(parent.nodetype, parent.tag, parent.attributes, parent.value, new_content)
+end
