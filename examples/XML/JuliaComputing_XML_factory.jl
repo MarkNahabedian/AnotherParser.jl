@@ -16,6 +16,10 @@ function xmlDocument(::JuliaComputingXMLFactory, prolog, root_element)
     XML.Document(prolog[1]..., prolog[2]..., root_element)
 end
 
+function xmlXMLDecl(::JuliaComputingXMLFactory, attrs::AbstractDict)
+    Node(XML.Declaration, nothing, attrs, nothing, nothing)
+end
+
 function xmlDTD(::JuliaComputingXMLFactory, dtd::AbstractString)
     Node(XML.DTD, nothing, nothing, dtd, nothing)
 end
@@ -51,7 +55,11 @@ function xmlEntityRef(::JuliaComputingXMLFactory, name::AbstractString)
     @sprintf("&%s;", name)
 end
 
-function xmlProcessingInstruction(::JuliaComputingXMLFactory, pi)
+function xmlProcessingInstruction(::JuliaComputingXMLFactory, pi::AbstractString)
     Node(XML.ProcessingInstruction, pi, nothing, nothing, nothing)
+end
+
+function xmlCData(::JuliaComputingXMLFactory, cdata::AbstractString)
+    Node(XML.CData, nothing, nothing, cdata, nothing)
 end
 

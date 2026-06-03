@@ -3,7 +3,7 @@
 
 export AbstractXMLFactory, xmlDocument, xmlDTD, xmlComment, xmlText,
     xmlElement, xmlEntityRef, xmlPEReference, xmlCharReference,
-    xmlProcessingInstruction
+    xmlProcessingInstruction, xmlCData
 
 abstract type AbstractXMLFactory end
 
@@ -20,6 +20,8 @@ Constructs an XML document.
 function xmlDocument(factory::AbstractXMLFactory, prolog, root_element)
     unsupported_xml(factory, prolog, root_element)
 end
+
+
 
 
 """
@@ -84,10 +86,33 @@ function xmlPEReference(factory::AbstractXMLFactory, name::AbstractString)
     unsupported_xml(factory, xmlPEReference, name)
 end
 
+
+"""
+    xmlCharReference(factory::AbstractXMLFactory, charcode::Int)
+
+Constructs an XML character reference.
+"""
 function xmlCharReference(factory::AbstractXMLFactory, charcode::Int)
     unsupported_xml(factory, xmlCharReference, charcode)
 end
 
-function xmlProcessingInstruction(factory::AbstractXMLFactory, pi)
+
+"""
+    xmlProcessingInstruction(factory::AbstractXMLFactory, pi::AbstractString)
+
+Constructs an XML processing instruction
+"""
+function xmlProcessingInstruction(factory::AbstractXMLFactory, pi::AbstractString)
     unsupported_xml(factory, xmlProcessingInstruction, pi)
 end
+
+
+"""
+    xmlCData(factory::AbstractXMLFactory, cdata::AbstractString)
+
+Constructs an XML CData section.
+"""
+function xmlCData(factory::AbstractXMLFactory, cdata::AbstractString)
+    unsupported_xml(factory, xmlCData, cdata)
+end
+

@@ -1,7 +1,17 @@
 # This is not the full BNF for XML.  It is provided here as an example
 # of how to use AnotherParser.
 
+using OrderedCollections: OrderedDict
+
 BNFGrammar(:XML)
+
+function unquote_xml_attribute(str::AbstractString)
+    if str[1] in ['"', '\'']
+        SubString(str, nextind(str, 1, 1), prevind(str, lastind(str), 1))
+    else
+        str
+    end
+end
 
 # [1]  https://www.w3.org/TR/xml/#NT-document
 # document  ::=  prolog element Misc*
@@ -236,11 +246,21 @@ DerivationRule(:XML, "PI",
                                     value_is_from_index),
                         Repeat(
                             Sequence(BNFRef(:XML, "S"),
+                                     #=
+                                     This pattern doesn't work because
+                                     Repeat(BNFRef(:XML, "Char")) is
+                                     eating the "?>" so
+                                     StringLiteral("?>") doesn't see
+                                     it.\:
                                      Excluding(
                                          Sequence(Repeat(BNFRef(:XML, "Char")),
                                                   StringLiteral("?>"),
                                                   Repeat(BNFRef(:XML, "Char"))),
-                                         Repeat(BNFRef(:XML, "Char"))));
+                                         Repeat(BNFRef(:XML, "Char")))
+                                     =#
+                                     Repeat(
+                                         Excluding(StringLiteral("?>"),
+                                                   BNFRef(:XML, "Char"))));
                             max=1),
                         Constructor(StringLiteral("?>"),
                                     value_is_from_index))
@@ -265,8 +285,11 @@ DerivationRule(:XML, "CDSect",
                Sequence(BNFRef(:XML, "CDStart"),
                         BNFRef(:XML, "CData"),
                         BNFRef(:XML, "CDEnd"))
-               )
-
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   xmlCData(context, value[2])
+               end
+                   
 # [19]  https://www.w3.org/TR/xml/#NT-CDStart
 # CDStart  ::=  '<![CDATA['
 DerivationRule(:XML, "CDStart",
@@ -276,12 +299,19 @@ DerivationRule(:XML, "CDStart",
 # [20]  https://www.w3.org/TR/xml/#NT-CData
 # CData  ::=  (Char* - (Char* ']]>' Char*))
 DerivationRule(:XML, "CData",
+               #=
+               # See the rule for "PI":
                Excluding(
                    Sequence(
                        Repeat(BNFRef(:XML, "Char")),
                        StringLiteral("]]>"),
                        Repeat(BNFRef(:XML, "Char"))),
                    Repeat(BNFRef(:XML, "Char")))
+               =#
+               Repeat(
+                   Excluding(
+                       StringLiteral("]]>"),
+                       BNFRef(:XML, "Char")))
                ).constructor = substring_constructor_function
 
 # [21]  https://www.w3.org/TR/xml/#NT-CDEnd
@@ -318,7 +348,12 @@ DerivationRule(:XML, "XMLDecl",
                    Repeat(BNFRef(:XML, "S");
                           max=1),
                    StringLiteral("?>"))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   xmlXMLDecl(context, OrderedDict(
+                       [ value[2], value[3]..., value[4]... ]
+                   ))
+               end
 
 # [24]  https://www.w3.org/TR/xml/#NT-VersionInfo
 #  VersionInfo  ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
@@ -336,7 +371,11 @@ DerivationRule(:XML, "VersionInfo",
                            CharacterLiteral('"'),
                            BNFRef(:XML, "VersionNum"),
                            CharacterLiteral('"'))))
-               )
+               ).constructor = function(context, input::AbstractString,
+                   from::Int, to::Int, value)
+                   "version" => value[4][2]
+               end
+                   
 
 # [25]  https://www.w3.org/TR/xml/#NT-Eq
 #  Eq  ::=  S? '=' S?
@@ -458,7 +497,10 @@ DerivationRule(:XML, "SDDecl",
                                StringLiteral("yes"),
                                StringLiteral("no")),
                            CharacterLiteral('"'))))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   "standalone" => value[4][2]
+               end
 
 # I don't see [33] through [38]
 
@@ -1040,7 +1082,10 @@ DerivationRule(:XML, "EncodingDecl",
                            CharacterLiteral('\''),
                            BNFRef(:XML, "EncName"),
                            CharacterLiteral('"'))))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   "encoding" => value[4][2]
+               end
 
 # [81]  https://www.w3.org/TR/xml/#NT-EncName
 #  EncName  ::=  [A-Za-z] ([A-Za-z0-9._] | '-')*
