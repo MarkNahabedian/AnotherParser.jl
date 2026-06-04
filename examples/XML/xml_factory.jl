@@ -13,15 +13,23 @@ end
 
 
 """
-    xmlDocument(factory, prolog, root_element)
+    xmlDocument(factory, prolog, root_element, misc...)
 
 Constructs an XML document.
 """
-function xmlDocument(factory::AbstractXMLFactory, prolog, root_element)
-    unsupported_xml(factory, prolog, root_element)
+function xmlDocument(factory::AbstractXMLFactory, children)
+    unsupported_xml(factory, children)
 end
 
 
+"""
+    xmlXMLDecl(factory::AbstractXMLFactory, attrs::AbstractDict)
+
+Returns an XML declaration.
+"""
+function xmlXMLDecl(factory::AbstractXMLFactory, attrs::AbstractDict)
+    unsupported_xml(factory, xmlXMLDecl, attrs)
+end
 
 
 """

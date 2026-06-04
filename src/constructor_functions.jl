@@ -1,7 +1,7 @@
 
 export identity_constructor_function, substring_constructor_function,
     value_is_from_index, value_is_to_index,
-    deep_flatten, flattening_constructor_function
+    deep_flatten, flattening_constructor_function, value_is
 
 
     """
@@ -75,4 +75,13 @@ Returns a flattened list given an arbitrarily nested one.
 flattening_constructor_function(context, input::AbstractString, from::Int, to::Int, value) =
     deep_flatten(value)
 
+
+"""
+    value_is(value)
+
+Returns a constructor function that always returns `value`.
+"""
+function value_is(value)
+    (context, input::AbstractString, from::Int, to::Int, _value) -> value
+end
 

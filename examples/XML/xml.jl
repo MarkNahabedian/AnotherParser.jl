@@ -21,7 +21,9 @@ DerivationRule(:XML, "document",
                         Repeat(BNFRef(:XML, "Misc")))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   xmlDocument(context, value[1], value[2])
+                   xmlDocument(context,
+                               filter(x -> x != nothing,
+                                      [ value[1]..., value[2], value[3]... ]))
                end
 
 # [2]  https://www.w3.org/TR/xml/#NT-Char
@@ -332,7 +334,8 @@ DerivationRule(:XML, "prolog",
                        max=1))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   [ value[1], map(seq -> seq[1], value[3]) ]
+                   [ value[1]..., value[2]...,
+                     map(seq -> seq[1], value[3])... ]
                end
 
 # [23]  https://www.w3.org/TR/xml/#NT-XMLDecl
@@ -400,8 +403,17 @@ DerivationRule(:XML, "Misc",
                Alternatives(
                    BNFRef(:XML, "Comment"),
                    BNFRef(:XML, "PI"),
-                   BNFRef(:XML, "S"))
-               )
+                   Constructor(BNFRef(:XML, "S"),
+                               # Text outside of the bounds of the
+                               # root Element is discarded.  It would
+                               # be clearer if the grammar had
+                               # separate productions for significant
+                               # versus ignored whitespace.
+                               value_is(nothing)))
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   value
+               end
 
 # [28]  https://www.w3.org/TR/xml/#NT-doctypedecl
 # doctypedecl   ::=   '<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'

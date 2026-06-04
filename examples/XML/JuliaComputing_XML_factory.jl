@@ -12,8 +12,8 @@ https://github.com/JuliaComputing/XML.jl XML implementation.
 struct JuliaComputingXMLFactory <: AbstractXMLFactory end
 
 
-function xmlDocument(::JuliaComputingXMLFactory, prolog, root_element)
-    XML.Document(prolog[1]..., prolog[2]..., root_element)
+function xmlDocument(::JuliaComputingXMLFactory, children)
+    XML.Node(XML.Document, nothing, nothing, nothing, children)
 end
 
 function xmlXMLDecl(::JuliaComputingXMLFactory, attrs::AbstractDict)
