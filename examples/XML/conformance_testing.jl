@@ -2,6 +2,9 @@
 # at https://www.w3.org/XML/Test/.
 
 using AnotherParser
+
+using EzXML
+
 include("xml_factory.jl")
 include("JuliaComputing_XML_factory.jl")
 include("xml.jl")
@@ -34,24 +37,23 @@ This suggests a factory function xmlDTD.
 
 function test_xml_conformance()
     # For now we only consider the standalone validity tests.
-    factory = JuliaComputingXMLFactory()
     valid_sa = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
     mkpath(joinpath(@__DIR__, "conformance_debugging"))
-    for xml in readdir(valid_sa)
-        if last(splitext(xml)) == ".xml"
-            xml1 = joinpath(valid_sa, xml)
-            test_xml_file(factory, xml1)
+    for filename in readdir(valid_sa)
+        if last(splitext(filename)) == ".xml"
+            xml = joinpath(valid_sa, filename)
+            mydoc = run_my_parser(xml)
+            if mydoc == nothing
+                continue
+            end
+            test_against_XMLjl(xml, mydoc)
+            # test_against_outfile(xml, mydoc)
         end
     end
 end
 
-"""
-    test_xml_file(factory, path)
-
-Parses the XML file at `path` using both our XML parserr and the
-JuliaComputing XML.jl parser, and compares the results.
-"""
-function test_xml_file(factory::AbstractXMLFactory, path)
+function run_my_parser(path)
+    factory = JuliaComputingXMLFactory()
     base, _ = splitext(path)
     report_file = joinpath(@__DIR__, "conformance_debugging", base * ".html")
     println("Parsing $path")
@@ -59,21 +61,51 @@ function test_xml_file(factory::AbstractXMLFactory, path)
                                   read(path, String);
                                   context = factory,
                                   enable_debug_logging_for = n -> true,
-                                  report_file = report_file
-                                  )
+                                  report_file = report_file)
     if !matched
         println("*** XML parse failed for $path")
+        return nothing
     else
-        xmljldoc =
-            try
-                read(path, Node)
-            catch e
-                println(stderr, "*** Error using XML.jl parser: ", e)
-                return
-            end
-        # compare_docs(xmljldoc, v)
-        compare_nodes(xmljldoc, merge_text_nodes(v))
+        return v
     end
+end
+
+
+function xml_out_file_path(path)
+    s = splitpath(path)
+    joinpath(s[1:(end - 1)]..., "out", s[end])
+end
+
+function test_against_outfile(path, mydoc)
+    # We can't just textually compare the serialization of the parsed
+    # XML with the contents of the out file because of how empty
+    # elements might be serialized.
+    getelement(doc) = doc.children[findfirst(x -> (x isa XML.Node)
+                                     && (x.nodetype == XML.Element),
+                                             doc.children)]
+    xmljlelt = 
+        try
+            getelement(read(xml_out_file_path(path), Node))
+        catch e
+            println(stderr, "*** Error using XML.jl parser: ", e)
+            return
+        end
+    myelt = getelement(mydoc)
+    println("  Comparing parse with out file:")
+    compare_nodes(xmljlelt, myelt)
+end
+
+
+function test_against_XMLjl(path, mydoc)
+    xmljldoc =
+        try
+            read(path, Node)
+        catch e
+            println(stderr, "*** Error using XML.jl parser: ", e)
+            return
+        end
+    # compare_docs(xmljldoc, mydoc)
+    compare_nodes(xmljldoc, mydoc #= merge_text_nodes(mydoc) =#)
 end
 
 function compare_docs(node1::Node, node2::Node)
@@ -85,11 +117,11 @@ function compare_docs(node1::Node, node2::Node)
     end
 end
 
-function compare_nodes(node1::Node, node2::Node)
+function compare_nodes(node1::XML.Node, node2::XML.Node)
     # nodes_equal doesn't say how the nodes differ.
     mismatch = false
     # Check if node types and data (tag names or text content) match
-    if nodetype(node1) != nodetype(node2)
+    if XML.nodetype(node1) != XML.nodetype(node2)
         println(stderr, "compare_nodes: Node type mismatch:\n\t$(nodetype(node1))\n\t$(nodetype(node2))")
         mismatch = true
     end
@@ -122,6 +154,7 @@ function compare_nodes(node1::Node, node2::Node)
     end
 end
 
+#=
 # Our XML parser, in combination with xmlEntityRef produce a separate
 # child node for each entity reference.  XML.jl combines them into a
 # single Text node.
@@ -150,3 +183,4 @@ function merge_text_nodes(parent)
     end
     Node(parent.nodetype, parent.tag, parent.attributes, parent.value, new_content)
 end
+=#
