@@ -934,6 +934,7 @@ DerivationRule(:XML, "CharRef",
                    RegexNode(r"&#(?<num>x[0-9a-fA-F]+);"))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
+                   # xmlconf/xmltest/valid/sa/042.xml 
                    if value["num"][1] == 'x'
                        code = parse(Int,
                                     SubString(input,
@@ -946,7 +947,8 @@ DerivationRule(:XML, "CharRef",
                                                    prevind(input, to, 1));
                                     base=10)
                        end
-                   xmlCharReference(context, code, value["num"][1] == 'x')
+                   # xmlCharReference(context, code, value["num"][1] == 'x')
+                   Char(code)
                end
 
 
