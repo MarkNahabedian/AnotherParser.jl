@@ -2,10 +2,10 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "c6fd4ccd4ea12bdb276ac3028f2998995559eabf"
+project_hash = "f2a7a257890b7057dd299097a4a31f6d863f63b6"
 
 [[deps.AnotherParser]]
-deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "Parameters", "PrettyPrint", "Test", "VectorLogging", "XML"]
+deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "Parameters", "PrettyPrint", "Printf", "Test", "VectorLogging", "XML"]
 path = "."
 uuid = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 version = "0.1.0-dev"
@@ -254,9 +254,9 @@ uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "3.5.1+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "05868e21324cede2207c6f0f466b4bfef6d5e7ee"
+git-tree-sha1 = "94ba93778373a53bfd5a0caaf7d809c445292ff4"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.8.1"
+version = "1.8.2"
 
 [[deps.Parameters]]
 deps = ["OrderedCollections", "UnPack"]
