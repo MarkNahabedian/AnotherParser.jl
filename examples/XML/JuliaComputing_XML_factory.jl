@@ -12,34 +12,51 @@ https://github.com/JuliaComputing/XML.jl XML implementation.
 struct JuliaComputingXMLFactory <: AbstractXMLFactory end
 
 
-function xmlDocument(::JuliaComputingXMLFactory, children)
+function xmlDocument(::JuliaComputingXMLFactory, input::AbstractString,
+                     from::Int, to::Int, value)
+    prolog = value[1]
+    element = value[2]
+    misc = value[3]
+    children = filter(x -> x != nothing,
+                      [ prolog..., element, misc... ])
     XML.Node(XML.Document, nothing, nothing, nothing, children)
 end
 
-function xmlXMLDecl(::JuliaComputingXMLFactory, attrs::AbstractDict)
+function xmlXMLDecl(::JuliaComputingXMLFactory, input::AbstractString,
+                    from::Int, to::Int, value)
+    attrs = OrderedDict(
+                       [ value[2], value[3]..., value[4]... ]
+    )
     Node(XML.Declaration, nothing, attrs, nothing, nothing)
 end
 
-function xmlDTD(::JuliaComputingXMLFactory, dtd::AbstractString)
-    Node(XML.DTD, nothing, nothing, dtd, nothing)
+function xmlDTD(::JuliaComputingXMLFactory, input::AbstractString,
+                from::Int, to::Int, value)
+    Node(XML.DTD, nothing, nothing,
+         SubString(input, value[3],
+                   prevind(input, value[7], 1)), nothing)
 end
 
-function xmlComment(::JuliaComputingXMLFactory, comment::AbstractString)
-    XML.Comment(comment)
+function xmlComment(::JuliaComputingXMLFactory, input::AbstractString,
+                    from::Int, to::Int, value)
+    XML.Comment(value[2])
 end
-
 
 function xmlText(factory::JuliaComputingXMLFactory, text::AbstractString)
     XML.Text(text)
 end
 
 
-function xmlElement(::JuliaComputingXMLFactory,
-                    tagname::AbstractString,
-                    attributes::Vector{<:Pair{Symbol, <:AbstractString}},
-                    children::Vector)
-    XML.Element(tagname, children...;
-                attributes...)
+function xmlElement(factory::JuliaComputingXMLFactory, input::AbstractString,
+                    from::Int, to::Int, value)
+    if value isa NamedTuple              # EmptyElemTag
+        return XML.Element(value.name, [], value.attributes)
+    end
+    starttag, content, endtag = value
+    @assert starttag.name == endtag.name
+    XML.Element(starttag.name,
+                content...;
+                starttag.attributes...)
 end
 
 function xmlCharReference(::JuliaComputingXMLFactory, charcode::Int, ishex)
@@ -55,11 +72,15 @@ function xmlEntityRef(::JuliaComputingXMLFactory, name::AbstractString)
     @sprintf("&%s;", name)
 end
 
-function xmlProcessingInstruction(::JuliaComputingXMLFactory, pi::AbstractString)
-    Node(XML.ProcessingInstruction, pi, nothing, nothing, nothing)
+function xmlProcessingInstruction(::JuliaComputingXMLFactory, input::AbstractString,
+                                  from::Int, to::Int, value)
+    pitarget = value[2]
+    # chars = map(join, values[2])
+    Node(XML.ProcessingInstruction, pitarget, nothing, nothing, nothing)
 end
 
-function xmlCData(::JuliaComputingXMLFactory, cdata::AbstractString)
-    Node(XML.CData, nothing, nothing, cdata, nothing)
+function xmlCData(::JuliaComputingXMLFactory, input::AbstractString,
+                  from::Int, to::Int, value)
+    Node(XML.CData, nothing, nothing, value[2], nothing)
 end
 

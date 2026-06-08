@@ -19,12 +19,8 @@ DerivationRule(:XML, "document",
                Sequence(BNFRef(:XML, "prolog"),
                         BNFRef(:XML, "element"),
                         Repeat(BNFRef(:XML, "Misc")))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlDocument(context,
-                               filter(x -> x != nothing,
-                                      [ value[1]..., value[2], value[3]... ]))
-               end
+               ).constructor = xmlDocument
+
 
 # [2]  https://www.w3.org/TR/xml/#NT-Char
 # Char  ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
@@ -235,17 +231,13 @@ DerivationRule(:XML, "Comment",
                                                        BNFRef(:XML, "Char"))))),
                             substring_constructor_function),
                         StringLiteral("-->"))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlComment(context, value[2])
-               end
+               ).constructor = xmlComment
 
 # [16]  https://www.w3.org/TR/xml/#NT-PI
 # PI  ::=  '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
 DerivationRule(:XML, "PI",
                Sequence(StringLiteral("<?"),
-                        Constructor(BNFRef(:XML, "PITarget"),
-                                    value_is_from_index),
+                        BNFRef(:XML, "PITarget"),
                         Repeat(
                             Sequence(BNFRef(:XML, "S"),
                                      #=
@@ -264,14 +256,8 @@ DerivationRule(:XML, "PI",
                                          Excluding(StringLiteral("?>"),
                                                    BNFRef(:XML, "Char"))));
                             max=1),
-                        Constructor(StringLiteral("?>"),
-                                    value_is_from_index))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlProcessingInstruction(context,
-                                            SubString(input, value[2],
-                                                      prevind(input, value[4], 1)))
-               end
+                        StringLiteral("?>"))
+               ).constructor = xmlProcessingInstruction
 
 # [17]  https://www.w3.org/TR/xml/#NT-PITarget
 # PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
@@ -287,10 +273,7 @@ DerivationRule(:XML, "CDSect",
                Sequence(BNFRef(:XML, "CDStart"),
                         BNFRef(:XML, "CData"),
                         BNFRef(:XML, "CDEnd"))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlCData(context, value[2])
-               end
+               ).constructor = xmlCData
                    
 # [19]  https://www.w3.org/TR/xml/#NT-CDStart
 # CDStart  ::=  '<![CDATA['
@@ -351,12 +334,7 @@ DerivationRule(:XML, "XMLDecl",
                    Repeat(BNFRef(:XML, "S");
                           max=1),
                    StringLiteral("?>"))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlXMLDecl(context, OrderedDict(
-                       [ value[2], value[3]..., value[4]... ]
-                   ))
-               end
+               ).constructor = xmlXMLDecl
 
 # [24]  https://www.w3.org/TR/xml/#NT-VersionInfo
 #  VersionInfo  ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
@@ -410,10 +388,7 @@ DerivationRule(:XML, "Misc",
                                # separate productions for significant
                                # versus ignored whitespace.
                                value_is(nothing)))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   value
-               end
+               )
 
 # [28]  https://www.w3.org/TR/xml/#NT-doctypedecl
 # doctypedecl   ::=   '<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'
@@ -438,12 +413,7 @@ DerivationRule(:XML, "doctypedecl",
                        max=1),
                    Constructor(CharacterLiteral('>'),
                                value_is_from_index))
-               ).constructor = function(context, input::AbstractString,
-                                        from::Int, to::Int, value)
-                   xmlDTD(context,
-                          SubString(input, value[3],
-                                    prevind(input, value[7], 1)))
-               end
+               ).constructor = xmlDTD
 
 # [28a]  https://www.w3.org/TR/xml/#NT-DeclSep
 #  DeclSep  ::=  PEReference | S

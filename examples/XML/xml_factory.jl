@@ -13,41 +13,41 @@ end
 
 
 """
-    xmlDocument(factory, prolog, root_element, misc...)
+    xmlDocument(factory, input::AbstractString, from::Int, to::Int, value)
 
 Constructs an XML document.
 """
-function xmlDocument(factory::AbstractXMLFactory, children)
-    unsupported_xml(factory, children)
+function xmlDocument(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
+    unsupported_xml(factory, xmlDocument, children)
 end
 
 
 """
-    xmlXMLDecl(factory::AbstractXMLFactory, attrs::AbstractDict)
+    xmlXMLDecl(factory, input::AbstractString, from::Int, to::Int, value)
 
 Returns an XML declaration.
 """
-function xmlXMLDecl(factory::AbstractXMLFactory, attrs::AbstractDict)
+function xmlXMLDecl(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
     unsupported_xml(factory, xmlXMLDecl, attrs)
 end
 
 
 """
-    xmlDTD(factory, AbstractString)
+    xmlDTD(factory, input::AbstractString, from::Int, to::Int, value)
 
 Constructs a document type definition.
 """
-function xmlDTD(factory::AbstractXMLFactory, dtd::AbstractString)
+function xmlDTD(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
     unsupported_xml(factory, xmlDTD, dtd)
 end
 
 
 """
-    xmlComment(factory, comment)
+    xmlComment(factory, input::AbstractString, from::Int, to::Int, value)
 
 Construct an XML comment node.
 """
-function xmlComment(factory::AbstractXMLFactory, comment::AbstractString)
+function xmlComment(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
     unsupported_xml(factory, xmlComment, comment)
 end
 
@@ -63,20 +63,17 @@ end
 
 
 """
-    xmlElement(factory::AbstractXMLFactory, tagname::AbstractString, attributes, children::Vector)
+    xmlElement(factory, input::AbstractString, from::Int, to::Int, value)
 
 Construct an XML element.
 """
-function xmlElement(factory::AbstractXMLFactory,
-                    tagname::AbstractString,
-                    attributes::Vector{<:Pair{Symbol, <:AbstractString}},
-                    children::Vector)
+function xmlElement(factory::AbstractXMLFactory, input::AbstractString,
+                    from::Int, to::Int, value)
     unsupported_xml(factory, xmlElement, tagname, attributes, children)
 end
 
-
 """
-    xmlEntityRef(factory::AbstractXMLFactory, name::AbstractString)
+    xmlEntityRef(factory, name::AbstractString)
 
 Returns the XML entity with the specified name.
 """
@@ -106,21 +103,90 @@ end
 
 
 """
-    xmlProcessingInstruction(factory::AbstractXMLFactory, pi::AbstractString)
+    xmlProcessingInstruction(factory, input::AbstractString, from::Int, to::Int, value)
 
 Constructs an XML processing instruction
 """
-function xmlProcessingInstruction(factory::AbstractXMLFactory, pi::AbstractString)
+function xmlProcessingInstruction(factory::AbstractXMLFactory,
+                                  input::AbstractString, from::Int, to::Int, value)
     unsupported_xml(factory, xmlProcessingInstruction, pi)
 end
 
 
 """
-    xmlCData(factory::AbstractXMLFactory, cdata::AbstractString)
+    xmlCData(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
 
 Constructs an XML CData section.
 """
-function xmlCData(factory::AbstractXMLFactory, cdata::AbstractString)
-    unsupported_xml(factory, xmlCData, cdata)
+function xmlCData(factory::AbstractXMLFactory, input::AbstractString, from::Int, to::Int, value)
+    unsupported_xml(factory, xmlCData, value)
 end
+
+
+#=
+
+Evolution towards supporting multiple factories -- making the factory
+interface and the grammar proper agnostic about the XML backend.
+
+At this point we want to support both XML.jl and EzXML.
+
+Any of the productions that use substring_constructor_function can
+still do so.
+
+"Names" and "Nmtokens": These constructors are already agnostic to
+back end factory.  Uses Constructor for internal cleanup but I think
+that is agnostic to back ends.
+
+"AttValue":  already agnostic to back end factory.
+
+"prolog": I think this constructor is a cleanup step that is back end
+agnostic.
+
+"VersionInfo": I think that this constructor is agnostic.
+
+"Misc": this is currently a hand coding of the identty constructor.
+Can we just revert to the default?  It uses Constructor to indicate
+whitespace in Misc should be ignored.
+
+"SDDecl":  I think this one is agnostic to back end.
+
+"<AttributeList>": I think we can keep this constructor as is.
+
+"Attribute": I think we can keep this constructor as is.
+
+"EmptyElemTag", "STag" and construct_element_tag: I think we can keep
+this constructor as is.  Maybe add a flag to distinguish empty element
+nodes.
+
+Fort these productions, redefine the factory function to confrm to the
+constructor function interface and have the methods for each backend
+do what they need to:
+
+* "document"      xmlDocument
+* "Comment"       xmlComment        USES Constructor, but I think agnostically.
+* "CDSect"        xmlCData
+* "PI"            xmlProcessingInstruction    CAN NO LONGER USE Constructor value_is_from_index
+                                              I''m not sure what to do with the Chars data.
+* "XMLDecl"       xmlXMLDecl
+* "doctypedecl"   xmlDTD            THIS ONE MIGHT BE TRICKY THOUGH
+* "element"       xmlElement
+
+
+Baseline test against XML.jl before the above changes:
+
+┌ Info: XML parser conformance test stats
+│   file_count = 120
+│   parse_failure_count = 8
+└   mismatch_count = 24
+
+After converting the above listed factory functions to the constructor
+function interface:
+
+┌ Info: XML parser conformance test stats
+│   file_count = 120
+│   parse_failure_count = 8
+└   mismatch_count = 24
+
+
+=#
 
