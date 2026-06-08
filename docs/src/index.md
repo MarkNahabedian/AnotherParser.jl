@@ -55,6 +55,7 @@ check_references
 pretty
 is_left_recursive
 walk_nodes
+deep_flatten
 ```
 
 ## Construction Utilities
@@ -103,6 +104,10 @@ arguments:
 ```@docs
 AnotherParser.identity_constructor_function
 AnotherParser.substring_constructor_function
+AnotherParser.value_is_from_index
+AnotherParser.value_is_to_index
+AnotherParser.value_is
+AnotherParser.flattening_constructor_function
 ```
 
 
@@ -182,6 +187,7 @@ format and a grammar for BNF as specified on the
 ```@docs
 debug_parsing
 DEBUG_BNFNODES
+AnotherParser.should_enable_debug_logging_for
 ```
 
 ## The Grammar for BNF
