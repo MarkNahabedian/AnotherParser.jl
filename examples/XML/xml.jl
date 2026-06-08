@@ -495,15 +495,7 @@ DerivationRule(:XML, "element",
                        BNFRef(:XML, "STag"),
                        BNFRef(:XML, "content"),
                        BNFRef(:XML, "ETag")))
-               ).constructor = function(context, input::AbstractString,
-                                         from::Int, to::Int, value)
-                   if value isa NamedTuple              # EmptyElemTag
-                       return xmlElement(context, value.name, value.attributes, [])
-                   end
-                   starttag, content, endtag = value
-                   @assert starttag.name == endtag.name
-                   xmlElement(context, starttag.name, starttag.attributes, content)
-               end
+               ).constructor = xmlElement
 
 # [40]  https://www.w3.org/TR/xml/#NT-STag
 #  STag  ::=  '<' Name (S Attribute)* S? '>'
