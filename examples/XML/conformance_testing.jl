@@ -36,20 +36,29 @@ This suggests a factory function xmlDTD.
 =#
 
 function test_xml_conformance()
+    file_count = 0
+    parse_failure_count = 0
+    mismatch_count = 0
     # For now we only consider the standalone validity tests.
     valid_sa = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
     mkpath(joinpath(@__DIR__, "conformance_debugging"))
     for filename in readdir(valid_sa)
         if last(splitext(filename)) == ".xml"
+            file_count += 1
             xml = joinpath(valid_sa, filename)
             mydoc = run_my_parser(xml)
             if mydoc == nothing
+                parse_failure_count += 1
                 continue
             end
-            test_against_XMLjl(xml, mydoc)
+            if test_against_XMLjl(xml, mydoc)
+                mismatch_count += 1
+            end
             # test_against_outfile(xml, mydoc)
         end
     end
+    @info("XML parser conformance test stats",
+          file_count, parse_failure_count, mismatch_count)
 end
 
 function run_my_parser(path)
@@ -102,9 +111,8 @@ function test_against_XMLjl(path, mydoc)
             read(path, Node)
         catch e
             println(stderr, "*** Error using XML.jl parser: ", e)
-            return
+            return true     # Treat parse failure a a mismatch.
         end
-    # compare_docs(xmljldoc, mydoc)
     compare_nodes(xmljldoc, mydoc #= merge_text_nodes(mydoc) =#)
 end
 
@@ -114,7 +122,9 @@ function compare_docs(node1::Node, node2::Node)
     if string1 != string2
         at = findfirst(collect(zip(string1, string2)) .|> (c -> c[1] != c[2]))
         println("Documents don't match starting at $at\n$string1\n$string2")
+        return true
     end
+    return false
 end
 
 function compare_nodes(node1::XML.Node, node2::XML.Node)
@@ -146,12 +156,13 @@ function compare_nodes(node1::XML.Node, node2::XML.Node)
         mismatch = true
     else
         for (c1, c2) in zip(kids1, kids2)
-            compare_nodes(c1, c2)
+            mismatch |= compare_nodes(c1, c2)
         end
     end
     if mismatch
         println("NODES DON'T MATCH\n$node1\n$node2\n")
     end
+    mismatch
 end
 
 #=
