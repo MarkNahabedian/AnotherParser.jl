@@ -19,7 +19,7 @@ DerivationRule(:XML, "document",
                Sequence(BNFRef(:XML, "prolog"),
                         BNFRef(:XML, "element"),
                         Repeat(BNFRef(:XML, "Misc")))
-               ).constructor = xmlDocument
+               ) # .constructor = xmlDocument
 
 
 # [2]  https://www.w3.org/TR/xml/#NT-Char
@@ -45,7 +45,11 @@ DerivationRule(:XML, "S",
                    CharacterLiteral(Char(0x9)),
                    CharacterLiteral(Char(0xD)),
                    CharacterLiteral(Char(0xA)));
-                      min=1)).constructor = substring_constructor_function
+                      min=1)
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTWhitespace(SubString(input, from, to))
+               end
 
 # [4]  https://www.w3.org/TR/xml/#NT-NameStartChar
 # NameStartChar ::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] |
@@ -98,7 +102,10 @@ DerivationRule(:XML, "NameChar",
 DerivationRule(:XML, "Name",
                Sequence(BNFRef(:XML, "NameStartChar"),
                         Repeat(BNFRef(:XML, "NameChar")))
-               ).constructor = substring_constructor_function
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTName(SubString(input, from, to))
+               end
 
 # [6]  https://www.w3.org/TR/xml/#NT-Names
 # Names  ::=  Name (#x20 Name)*
@@ -154,21 +161,26 @@ DerivationRule(:XML, "EntityValue",
 # AttValue  ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
 DerivationRule(:XML, "AttValue",
                Alternatives(
+                   # In the RegexNodes below, we add a + at the end of
+                   # the regular expressions to consolidate the
+                   # matching characters into a single string.
                    Sequence(CharacterLiteral('"'),
                             Repeat(
                                 Alternatives(
-                                    RegexNode(r"[^<&\"]"),
+                                    Constructor(RegexNode(r"[^<&\"]+"),
+                                                substring_constructor_function),
                                     BNFRef(:XML, "Reference"))),
                             CharacterLiteral('"')),
                    Sequence(CharacterLiteral('\''),
                             Repeat(
                                 Alternatives(
-                                    RegexNode(r"[^<&']"),
+                                    Constructor(RegexNode(r"[^<&']+"),
+                                                substring_constructor_function),
                                     BNFRef(:XML, "Reference"))),
                             CharacterLiteral('\'')))
                ).constructor = function (context, input::AbstractString,
                                          from::Int, to::Int, value)
-                   SubString(input, nextind(input, from, 1), prevind(input, to, 1))
+                   CSTAttValue(value[2], value[1])
                end
 
 # [11]  https://www.w3.org/TR/xml/#NT-SystemLiteral
@@ -176,7 +188,8 @@ DerivationRule(:XML, "AttValue",
 DerivationRule(:XML, "SystemLiteral",
                Alternatives(
                    RegexNode(r"\"[^\"]*\""),
-                   RegexNode(r"'[^']*'")))
+                   RegexNode(r"'[^']*'"))
+               ).constructor = substring_constructor_function
 
 # [12]  https://www.w3.org/TR/xml/#NT-PubidLiteral
 # PubidLiteral::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
@@ -187,7 +200,8 @@ DerivationRule(:XML, "PubidLiteral",
                             CharacterLiteral('"')),
                    Sequence(CharacterLiteral('"'),
                             Repeat(BNFRef(:XML, "PubidChar")),
-                            CharacterLiteral('"'))))
+                            CharacterLiteral('"')))
+               ).constructor = substring_constructor_function
 
 # [13]  https://www.w3.org/TR/xml/#NT-PubidChar
 # PubidChar  ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
@@ -231,33 +245,43 @@ DerivationRule(:XML, "Comment",
                                                        BNFRef(:XML, "Char"))))),
                             substring_constructor_function),
                         StringLiteral("-->"))
-               ).constructor = xmlComment
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTComment(SubString(input,
+                                        nextind(input, from, length("<!--")),
+                                        prevind(input, to, length("-->"))))
+               end
 
 # [16]  https://www.w3.org/TR/xml/#NT-PI
 # PI  ::=  '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
 DerivationRule(:XML, "PI",
                Sequence(StringLiteral("<?"),
                         BNFRef(:XML, "PITarget"),
-                        Repeat(
-                            Sequence(BNFRef(:XML, "S"),
-                                     #=
-                                     This pattern doesn't work because
-                                     Repeat(BNFRef(:XML, "Char")) is
-                                     eating the "?>" so
-                                     StringLiteral("?>") doesn't see
-                                     it.\:
-                                     Excluding(
-                                         Sequence(Repeat(BNFRef(:XML, "Char")),
-                                                  StringLiteral("?>"),
-                                                  Repeat(BNFRef(:XML, "Char"))),
-                                         Repeat(BNFRef(:XML, "Char")))
-                                     =#
-                                     Repeat(
-                                         Excluding(StringLiteral("?>"),
-                                                   BNFRef(:XML, "Char"))));
-                            max=1),
+                        Constructor(
+                            Repeat(
+                                Sequence(BNFRef(:XML, "S"),
+                                         #=
+                                         This pattern doesn't work because
+                                         Repeat(BNFRef(:XML, "Char")) is
+                                         eating the "?>" so
+                                         StringLiteral("?>") doesn't see
+                                         it.\:
+                                         Excluding(
+                                             Sequence(Repeat(BNFRef(:XML, "Char")),
+                                                      StringLiteral("?>"),
+                                                      Repeat(BNFRef(:XML, "Char"))),
+                                             Repeat(BNFRef(:XML, "Char")))
+                                         =#
+                                         Repeat(
+                                             Excluding(StringLiteral("?>"),
+                                                       BNFRef(:XML, "Char"))));
+                                max=1),
+                            substring_constructor_function),
                         StringLiteral("?>"))
-               ).constructor = xmlProcessingInstruction
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTProcessingInstruction(value[2], value[3])
+               end
 
 # [17]  https://www.w3.org/TR/xml/#NT-PITarget
 # PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
@@ -273,7 +297,10 @@ DerivationRule(:XML, "CDSect",
                Sequence(BNFRef(:XML, "CDStart"),
                         BNFRef(:XML, "CData"),
                         BNFRef(:XML, "CDEnd"))
-               ).constructor = xmlCData
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTCharData(value[2], true)
+               end
                    
 # [19]  https://www.w3.org/TR/xml/#NT-CDStart
 # CDStart  ::=  '<![CDATA['
@@ -334,7 +361,11 @@ DerivationRule(:XML, "XMLDecl",
                    Repeat(BNFRef(:XML, "S");
                           max=1),
                    StringLiteral("?>"))
-               ).constructor = xmlXMLDecl
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTXMLDecl(CSTDeclAttr[value[2], value[3]..., value[4]...],
+                              value[5]...)
+               end
 
 # [24]  https://www.w3.org/TR/xml/#NT-VersionInfo
 #  VersionInfo  ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
@@ -353,8 +384,8 @@ DerivationRule(:XML, "VersionInfo",
                            BNFRef(:XML, "VersionNum"),
                            CharacterLiteral('"'))))
                ).constructor = function(context, input::AbstractString,
-                   from::Int, to::Int, value)
-                   "version" => value[4][2]
+                                        from::Int, to::Int, value)
+                   CSTDeclAttr(value[1], value[2], value[3], value[4][1], value[4][2])
                end
                    
 
@@ -365,7 +396,11 @@ DerivationRule(:XML, "Eq",
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('='),
                    Repeat(BNFRef(:XML, "S"); max=1))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTEq(isempty(value[1]) ? CSTWhitespace("") : value[1][1],
+                         isempty(value[3]) ? CSTWhitespace("") : value[3][1])
+               end
 
 # [26]  https://www.w3.org/TR/xml/#NT-VersionNum
 #  VersionNum  ::=  '1.' [0-9]+
@@ -399,9 +434,15 @@ DerivationRule(:XML, "doctypedecl",
                    Constructor(BNFRef(:XML, "Name"),
                                value_is_from_index),
                    Repeat(
-                       Sequence(
-                           BNFRef(:XML, "S"),
-                           BNFRef(:XML, "ExternalID"));
+                       Constructor(
+                           Sequence(
+                               BNFRef(:XML, "S"),
+                               BNFRef(:XML, "ExternalID")),
+                           function(context, input::AbstractString,
+                                    from::Int, to::Int, value)
+                               (value[1], value[2])
+                           end
+                       );
                        max=1),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    Repeat(
@@ -413,7 +454,10 @@ DerivationRule(:XML, "doctypedecl",
                        max=1),
                    Constructor(CharacterLiteral('>'),
                                value_is_from_index))
-               ).constructor = xmlDTD
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   
+               end
 
 # [28a]  https://www.w3.org/TR/xml/#NT-DeclSep
 #  DeclSep  ::=  PEReference | S
@@ -481,7 +525,7 @@ DerivationRule(:XML, "SDDecl",
                            CharacterLiteral('"'))))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   "standalone" => value[4][2]
+                   CSTDeclAttr(value[1], value[2], value[3], value[4][1], value[4][2])
                end
 
 # I don't see [33] through [38]
@@ -495,7 +539,15 @@ DerivationRule(:XML, "element",
                        BNFRef(:XML, "STag"),
                        BNFRef(:XML, "content"),
                        BNFRef(:XML, "ETag")))
-               ).constructor = xmlElement
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   if value isa NamedTuple              # EmptyElemTag
+                       return CSTElement(value.name, value.attributes, [], true)
+                   end
+                   starttag, content, endtag = value
+                   @assert starttag.name.name == endtag.name.name
+                   return CSTElement(starttag.name, starttag.attributes, content, false)
+               end
 
 # [40]  https://www.w3.org/TR/xml/#NT-STag
 #  STag  ::=  '<' Name (S Attribute)* S? '>'
@@ -509,8 +561,9 @@ DerivationRule(:XML, "<AttributeList>",
                        BNFRef(:XML, "Attribute")))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   attributes = Pair{Symbol, <:AbstractString}[]
-                   for (_, attribute) in value
+                   attributes = CSTAttribute[]
+                   for (wsp, attribute) in value
+                       attribute.preceeding_whitespace = wsp
                        push!(attributes, attribute)
                    end
                    attributes
@@ -540,7 +593,7 @@ DerivationRule(:XML, "Attribute",
                    BNFRef(:XML, "AttValue"))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   Symbol(value[1]) => value[3]
+                   CSTAttribute(value[1], value[3])
                end
 
 # [42]  https://www.w3.org/TR/xml/#NT-ETag
@@ -561,7 +614,8 @@ DerivationRule(:XML, "ETag",
 #  content   ::=   CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
     DerivationRule(:XML, "content",
                    Sequence(
-                       Repeat(BNFRef(:XML, "CharData"); max=1),
+                       Constructor(Repeat(BNFRef(:XML, "CharData"); max=1),
+                                   substring_constructor_function),
                        Repeat(
                            Sequence(
                                Alternatives(
@@ -574,10 +628,8 @@ DerivationRule(:XML, "ETag",
                    ).constructor = function (context, input::AbstractString,
                                              from::Int, to::Int, value)
                        content = []
-                       for cd in value[1]
-                           if length(cd) > 0
-                               push!(content, cd)
-                           end
+                       if !isempty(value[1])
+                           push!(content, value[1])
                        end
                        for (a, cd) in value[2]
                            push!(content, a)
@@ -896,23 +948,8 @@ DerivationRule(:XML, "CharRef",
                    RegexNode(r"&#(?<num>x[0-9a-fA-F]+);"))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   # xmlconf/xmltest/valid/sa/042.xml 
-                   if value["num"][1] == 'x'
-                       code = parse(Int,
-                                    SubString(input,
-                                              nextind(input, from, 3),
-                                              prevind(input, to, 1));
-                                    base=16)
-                   else
-                       code = parse(Int, SubString(input,
-                                                   nextind(input, from, 2),
-                                                   prevind(input, to, 1));
-                                    base=10)
-                       end
-                   # xmlCharReference(context, code, value["num"][1] == 'x')
-                   Char(code)
+                              CSTCharRef(value["num"])
                end
-
 
 # [67]  https://www.w3.org/TR/xml/#NT-Reference
 #  Reference  ::=  EntityRef | CharRef
@@ -930,7 +967,7 @@ DerivationRule(:XML, "EntityRef",
                         CharacterLiteral(';'))
                ).constructor = function (context, input::AbstractString,
                                          from::Int, to::Int, value)
-                   xmlEntityRef(context, value[2])
+                   CSTEntityRef(value[2])
                end
 
 # [69]  https://www.w3.org/TR/xml/#NT-PEReference
@@ -941,7 +978,7 @@ DerivationRule(:XML, "PEReference",
                         CharacterLiteral(';'))
                ).constructor = function (context, input::AbstractString,
                                          from::Int, to::Int, value)
-                   xmlPEReference(context, value[2])
+                   CSTPEReference(value[2])
                end
 
 # [70]  https://www.w3.org/TR/xml/#NT-EntityDecl
@@ -1011,7 +1048,14 @@ DerivationRule(:XML, "ExternalID",
                        BNFRef(:XML, "PubidLiteral"),
                        BNFRef(:XML, "S"),
                        BNFRef(:XML, "SystemLiteral")))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   if value[1] == "SYSTEM"
+                       CSTExtIdSystem(value[2], value[3])
+                   else
+                       CSTExtIdSystem(value[2], value[3], value[4], value[5])
+                   end
+               end
 
 # [76]  https://www.w3.org/TR/xml/#NT-NDataDecl
 #  NDataDecl  ::=  S 'NDATA' S Name
@@ -1057,10 +1101,10 @@ DerivationRule(:XML, "EncodingDecl",
                        Sequence(
                            CharacterLiteral('\''),
                            BNFRef(:XML, "EncName"),
-                           CharacterLiteral('"'))))
+                           CharacterLiteral('\''))))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   "encoding" => value[4][2]
+                   CSTDeclAttr(value[1], value[2], value[3], value[4][1], value[4][2])
                end
 
 # [81]  https://www.w3.org/TR/xml/#NT-EncName
