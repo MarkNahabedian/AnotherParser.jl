@@ -412,7 +412,7 @@ end
     if !matched
         return false, v, i
     end
-    v2 = n.constructor(context, input, index, i - 1, v)
+    v2 = n.constructor(context, input, index, prevind(input, i, 1), v)
     if logReductions
         @info "$index: $(n.constructor) reduced $(typeof(v)) $v to $(typeof(v2)) $v2"
     end
