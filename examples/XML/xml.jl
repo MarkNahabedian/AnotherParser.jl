@@ -19,13 +19,16 @@ DerivationRule(:XML, "document",
                Sequence(BNFRef(:XML, "prolog"),
                         BNFRef(:XML, "element"),
                         Repeat(BNFRef(:XML, "Misc")))
-               ) # .constructor = xmlDocument
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTDocument(value[1], value[2], value[3])
+               end
 
 
 # [2]  https://www.w3.org/TR/xml/#NT-Char
 # Char  ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 
-function is_xml_char(c)
+function is_xml_char(c::Char)
     (codepoint(c) == 0x9
      || codepoint(c) == 0xA
      || codepoint(c) == 0xD
@@ -58,7 +61,7 @@ DerivationRule(:XML, "S",
 # [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] |
 # [#x10000-#xEFFFF]
 
-function is_xml_name_start_char(c)
+function is_xml_name_start_char(c::Char)
     (c == ':'
      || c in 'A':'Z'
      || c == '_'
@@ -83,7 +86,7 @@ DerivationRule(:XML, "NameStartChar",
 # [4a]  https://www.w3.org/TR/xml/#NT-NameChar
 # NameChar   ::=  NameStartChar | "-" | "." | [0-9] | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
 
-function is_xml_name_char(c)
+function is_xml_name_char(c::Char)
     (is_xml_name_start_char(c)
      || c == '-'
      || c == '.'
@@ -145,17 +148,36 @@ DerivationRule(:XML, "EntityValue",
                    Sequence(CharacterLiteral('"'),
                             Repeat(
                                 Alternatives(
-                                    RegexNode(r"[^%&\"]"),
+                                    Constructor(RegexNode(r"[^%&\"]"),
+                                                substring_constructor_function),
                                     BNFRef(:XML, "PEReference"),
                                     BNFRef(:XML, "Reference"))),
                             CharacterLiteral('"')),
                    Sequence(CharacterLiteral('\''),
                             Repeat(
                                 Alternatives(
-                                    RegexNode(r"[^%&']"),
+                                    Constructor(RegexNode(r"[^%&']"),
+                                                substring_constructor_function),
                                     BNFRef(:XML, "PEReference"),
                                     BNFRef(:XML, "Reference"))),
-                            CharacterLiteral('\''))))
+                            CharacterLiteral('\'')))
+               ).constructor  =function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   # coalesce sequention abstract strings
+                   elts = []
+                   for v in value[2]
+                       if v isa AbstractString
+                           if !isempty(elts) && last(elts) isa AbstractString
+                               elts[lastindex(elts)] *= v
+                           else
+                               push!(elts, v)
+                           end
+                       else
+                           push!(elts, v)
+                       end
+                   end
+                   CSTEntityValue(value[1], elts)
+               end
 
 # [10]  https://www.w3.org/TR/xml/#NT-AttValue
 # AttValue  ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
@@ -198,14 +220,16 @@ DerivationRule(:XML, "PubidLiteral",
                    Sequence(CharacterLiteral('"'),
                             Repeat(BNFRef(:XML, "PubidChar")),
                             CharacterLiteral('"')),
-                   Sequence(CharacterLiteral('"'),
-                            Repeat(BNFRef(:XML, "PubidChar")),
-                            CharacterLiteral('"')))
+                   Sequence(CharacterLiteral('\''),
+                            Repeat(
+                                Excluding(CharacterLiteral('\''),
+                                          BNFRef(:XML, "PubidChar"))),
+                            CharacterLiteral('\'')))
                ).constructor = substring_constructor_function
 
 # [13]  https://www.w3.org/TR/xml/#NT-PubidChar
 # PubidChar  ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
-function is_xml_PubidChar(c)
+function is_xml_PubidChar(c::Char)
     (codepoint(c) == 0x20
      || codepoint(c) == 0xD
      || codepoint(c) == 0xA
@@ -344,8 +368,7 @@ DerivationRule(:XML, "prolog",
                        max=1))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   [ value[1]..., value[2]...,
-                     map(seq -> seq[1], value[3])... ]
+                   CSTProlog(value[1], value[2], value[3])
                end
 
 # [23]  https://www.w3.org/TR/xml/#NT-XMLDecl
@@ -422,8 +445,13 @@ DerivationRule(:XML, "Misc",
                                # be clearer if the grammar had
                                # separate productions for significant
                                # versus ignored whitespace.
-                               value_is(nothing)))
+                               function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                                   value.is_ignorable = true
+                                   value
+                               end))
                )
+
 
 # [28]  https://www.w3.org/TR/xml/#NT-doctypedecl
 # doctypedecl   ::=   '<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'
@@ -431,8 +459,7 @@ DerivationRule(:XML, "doctypedecl",
                Sequence(
                    StringLiteral("<!DOCTYPE"),
                    BNFRef(:XML, "S"),
-                   Constructor(BNFRef(:XML, "Name"),
-                               value_is_from_index),
+                   BNFRef(:XML, "Name"),
                    Repeat(
                        Constructor(
                            Sequence(
@@ -446,17 +473,32 @@ DerivationRule(:XML, "doctypedecl",
                        max=1),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    Repeat(
-                       Sequence(
-                           CharacterLiteral('['),
-                           BNFRef(:XML, "intSubset"),
-                           CharacterLiteral(']'),
-                           Repeat(BNFRef(:XML, "S"); max=1));
+                       Constructor(
+                           Sequence(
+                               CharacterLiteral('['),
+                               BNFRef(:XML, "intSubset"),
+                               CharacterLiteral(']'),
+                               Repeat(BNFRef(:XML, "S"); max=1)),
+                           function(context, input::AbstractString,
+                                    from::Int, to::Int, value)
+                               @assert(all(x -> x isa eltype(CSTIntSubset),
+                                           value[2]),
+                                       value[2])
+                               [value[2],
+                                isempty(value[4]) ? CSTWhitespace("") : value[4]]
+                           end);
                        max=1),
-                   Constructor(CharacterLiteral('>'),
-                               value_is_from_index))
+                   CharacterLiteral('>'))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   
+                   if isempty(value[6])
+                       CSTDocTypeDecl(value[2], value[3], value[4],
+                                      CSTIntSubset[],
+                                      CSTWhitespace(""))
+                   else
+                       CSTDocTypeDecl(value[2], value[3], value[4],
+                                      value[5], value[6][1][1], value[6][1][2])
+                   end
                end
 
 # [28a]  https://www.w3.org/TR/xml/#NT-DeclSep
@@ -542,11 +584,19 @@ DerivationRule(:XML, "element",
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
                    if value isa NamedTuple              # EmptyElemTag
-                       return CSTElement(value.name, value.attributes, [], true)
+                       return CSTElement(value.name,
+                                         value.attributes,
+                                         value.whitespace,
+                                         [], [], true)
                    end
                    starttag, content, endtag = value
                    @assert starttag.name.name == endtag.name.name
-                   return CSTElement(starttag.name, starttag.attributes, content, false)
+                   return CSTElement(starttag.name,
+                                     starttag.attributes,
+                                     starttag.whitespace,
+                                     content,
+                                     endtag.whitespace,
+                                     false)
                end
 
 # [40]  https://www.w3.org/TR/xml/#NT-STag
@@ -572,7 +622,8 @@ DerivationRule(:XML, "<AttributeList>",
 function construct_element_tag(context, input::AbstractString,
                                from::Int, to::Int, value)
     (name = value[2],
-     attributes = value[3])
+     attributes = value[3],
+     whitespace = value[4])
 end
 
 DerivationRule(:XML, "STag",
@@ -606,7 +657,8 @@ DerivationRule(:XML, "ETag",
                    CharacterLiteral('>'))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   (name = value[2],)
+                   (name = value[2],
+                    whitespace = value[3])
                end
 
 
@@ -664,10 +716,11 @@ DerivationRule(:XML, "elementdecl",
                    BNFRef(:XML, "contentspec"),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('>'))
-               ) #= .constructor = function(context, input::AbstractString,
+               ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   (value[1], value[3], value[5])
-               end =#
+                   CSTElementDecl(value[2], value[3], value[4], value[5],
+                                  isempty(value[6]) ? CSTWhitespace("") : value[6][1])
+               end
 
 # [46]  https://www.w3.org/TR/xml/#NT-contentspec
 #  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children
@@ -677,7 +730,7 @@ DerivationRule(:XML, "contentspec",
                    StringLiteral("ANY"),
                    BNFRef(:XML, "Mixed"),
                    BNFRef(:XML, "children"))
-               )
+               ).constructor = substring_constructor_function
 
 # [47]  https://www.w3.org/TR/xml/#NT-children
 #  children  ::=  (choice | seq) ('?' | '*' | '+')?
@@ -781,7 +834,11 @@ DerivationRule(:XML, "AttlistDecl",
                    Repeat(BNFRef(:XML, "AttDef")),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('>'))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTAttlistDecl(value[2], value[3], value[4],
+                                  isempty(value[5]) ? CSTWhitespace("") : value[5][1])
+               end
 
 # [53]  https://www.w3.org/TR/xml/#NT-AttDef
 #  AttDef  ::=  S Name S AttType S DefaultDecl
@@ -793,7 +850,10 @@ DerivationRule(:XML, "AttDef",
                    BNFRef(:XML, "AttType"),
                    BNFRef(:XML, "S"),
                    BNFRef(:XML, "DefaultDecl"))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTAttDef(value...)
+               end
 
 # [54]  https://www.w3.org/TR/xml/#NT-AttType
 #  AttType  ::=  StringType | TokenizedType | EnumeratedType
@@ -802,12 +862,13 @@ DerivationRule(:XML, "AttType",
                    BNFRef(:XML, "StringType"),
                    BNFRef(:XML, "TokenizedType"),
                    BNFRef(:XML, "EnumeratedType"))
-               )
+               ).constructor = substring_constructor_function
 
 #[55]  https://www.w3.org/TR/xml/#NT-StringType
 #  StringType  ::=  'CDATA'
 DerivationRule(:XML, "StringType",
-               StringLiteral("CDATA"))
+               StringLiteral("CDATA")
+               ).constructor = substring_constructor_function
 
 # [56]  https://www.w3.org/TR/xml/#NT-TokenizedType
 # TokenizedType  ::=  'ID' | 'IDREF' | 'IDREFS' | 'ENTITY' | 'ENTITIES' | 'NMTOKEN' | 'NMTOKENS'
@@ -828,7 +889,7 @@ DerivationRule(:XML, "EnumeratedType",
                Alternatives(
                    BNFRef(:XML, "NotationType"),
                    BNFRef(:XML, "Enumeration"))
-               )
+               ).constructor = substring_constructor_function
 
 # [58]  https://www.w3.org/TR/xml/#NT-NotationType
 #  NotationType  ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
@@ -878,7 +939,7 @@ DerivationRule(:XML, "DefaultDecl",
                                StringLiteral("#FIXED"),
                                BNFRef(:XML, "S")); max=1),
                        BNFRef(:XML, "AttValue")))
-               )
+               ).constructor = substring_constructor_function
 
 # [61]  https://www.w3.org/TR/xml/#NT-conditionalSect
 #  conditionalSect  ::=  includeSect | ignoreSect
@@ -1014,7 +1075,11 @@ DerivationRule(:XML, "PEDecl",
                    BNFRef(:XML, "PEDef"),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('>'))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTPEDecl(value[2], value[4], value[5], value[6], value[7],
+                             isempty(value[8]) ? CSTWhitespace("") : value[8][1])
+               end
 
 # [73]  https://www.w3.org/TR/xml/#NT-EntityDef
 #  EntityDef   ::=   EntityValue | (ExternalID NDataDecl?)
@@ -1053,7 +1118,7 @@ DerivationRule(:XML, "ExternalID",
                    if value[1] == "SYSTEM"
                        CSTExtIdSystem(value[2], value[3])
                    else
-                       CSTExtIdSystem(value[2], value[3], value[4], value[5])
+                       CSTExtIdPublic(value[2], value[3], value[4], value[5])
                    end
                end
 
@@ -1064,7 +1129,10 @@ DerivationRule(:XML, "NDataDecl",
                    StringLiteral("NDATA"),
                    BNFRef(:XML, "S"),
                    BNFRef(:XML, "Name"))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTNDataDecl(value[2], value[3])
+               end
 
 # [77]
 #  TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
@@ -1113,8 +1181,6 @@ DerivationRule(:XML, "EncName",
                RegexNode(r"[A-Za-z][A-Za-z0-9_-]*")
                ).constructor = substring_constructor_function
 
-
-
 # [82]  https://www.w3.org/TR/xml/#NT-NotationDecl
 #  NotationDecl  ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>'
 DerivationRule(:XML, "NotationDecl",
@@ -1128,7 +1194,11 @@ DerivationRule(:XML, "NotationDecl",
                        BNFRef(:XML, "PublicID")),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('>'))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTNotationDecl(value[2], value[3], value[4], value[5],
+                                   isempty(value[6]) ? CSTWhitespace("") : value[6][1])
+               end
 
 # [83]  https://www.w3.org/TR/xml/#NT-PublicID
 #  PublicID  ::=  'PUBLIC' S PubidLiteral
@@ -1137,7 +1207,10 @@ DerivationRule(:XML, "PublicID",
                    StringLiteral("PUBLIC"),
                    BNFRef(:XML, "S"),
                    BNFRef(:XML, "PubidLiteral"))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTPublicID(value[2], value[3])
+               end
 
 
 check_references(AllGrammars[:XML])

@@ -11,6 +11,9 @@ begin
     using AnotherParser
 end
 
+# ╔═╡ 1e9c0f53-6cad-4e35-8868-15374f528f32
+using Markdown
+
 # ╔═╡ eaf455d3-fa8d-4d67-9b98-09f34daaad1a
 include(joinpath(@__DIR__, "../../examples/XML/xml.jl"))
 
@@ -261,17 +264,23 @@ begin
     mutable struct CSTElement <: CSTNode
         tag::CSTName
         attributes::Vector{CSTAttribute}
+		start_tag_trailing_whitespace::Vector{CSTWhitespace}
         content::Vector{Union{AbstractString, CSTNode}}
+		end_tag_trailing_whitespace::Vector{CSTWhitespace}
         isempty::Bool
     end
 
     function Base.print(io::IO, n::CSTElement)
         if n.isempty
-            print(io, "<", n.tag, n.attributes, "/>")
+            print(io, "<", n.tag, n.attributes,
+				  n.start_tag_trailing_whitespace...,
+				  "/>")
         else
             print(io, "<", n.tag, n.attributes, ">",
                   n.content...,
-                  "</", n.tag, ">")
+                  "</", n.tag,
+				  n.end_tag_trailing_whitespace...,
+				  ">")
         end
     end
 
@@ -548,6 +557,12 @@ begin
 
 end
 
+# ╔═╡ bf8cb073-8212-4553-be5c-2fcf11aa1321
+md"""# Testing"""
+
+# ╔═╡ c6d29e05-4270-4f30-b088-e9e62e44c066
+md"""## Conformance"""
+
 # ╔═╡ 9bdb0817-3ceb-423f-ba0d-2cc8dd1d5ae2
 begin
     # CSTWhitespace
@@ -643,6 +658,9 @@ function run_conformance_tests()
     parse_error_count = 0
     parse_failure_count = 0
     mismatch_count = 0
+	match_count = 0
+	parse_failures = []
+	mismatch_failures = []
     @info("Conformatce test diectory", valid_sa)
     for filename in readdir(valid_sa)
         if last(splitext(filename)) == ".xml"
@@ -655,6 +673,7 @@ function run_conformance_tests()
             catch e
                 @warn("Parse error", e)
                 parse_error_count += 1
+				push!(parse_failures, filename)
                 continue
             end
             if !matched
@@ -666,11 +685,15 @@ function run_conformance_tests()
             if xmltext != serialized
                 @info("serialized parse doesn't match", xmltext, serialized)
                 mismatch_count += 1
+				push!(mismatch_failures, filename)
+			else
+				match_count += 1
             end
         end
     end
+	@info("failures", parse_failures, mismatch_failures)
     @info("Conformatnce tests", file_count, parse_error_count,
-          parse_failure_count, mismatch_count)
+          parse_failure_count, mismatch_count, match_count)
 end
 
 # ╔═╡ 83ef2ebb-1ab0-442e-8658-95a4b8954452
@@ -678,12 +701,15 @@ if @isdefined PlutoRunner
     run_conformance_tests()
 end
 
+# ╔═╡ 74020c13-4105-4e8f-b9ee-90c3f5338a67
+md"""## Hand Testing and Debugging"""
+
 # ╔═╡ f19e2d7f-a0c7-4906-8285-eab6b20b9feb
 conformance_dir = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
 
 # ╔═╡ d20a727a-e4c5-49d0-acae-5836a541f0d0
 begin
-	xml = read(joinpath(conformance_dir, "001.xml"), String)
+	xml = read(joinpath(conformance_dir, "002.xml"), String)
 	print(xml)
 end
 
@@ -694,10 +720,13 @@ recognize(BNFRef(:XML, "document"), xml)
 doc = recognize(BNFRef(:XML, "document"), xml)[2]
 
 # ╔═╡ f7acb4e5-11fb-4fab-bfbf-d3593961f517
-print(doc.root)
+print(doc)
 
 # ╔═╡ e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
 doc.prolog.dtd
+
+# ╔═╡ b91fe301-7a6d-425d-b835-db7654b8cf24
+print(doc.prolog)
 
 # ╔═╡ 2995e9d6-8eeb-4908-9ddc-5a2fee23d65e
 print(doc.prolog.dtd[1][1].external_id...)
@@ -705,11 +734,8 @@ print(doc.prolog.dtd[1][1].external_id...)
 # ╔═╡ 0b831028-dc8b-41fb-8776-34da514f07a5
 print(doc.prolog.dtd[1][1].internal_subset...)
 
-# ╔═╡ 381f3a26-82e8-46ef-8a52-1eb7c4fca82e
-print(doc.prolog.dtd[1][1].name)
-
 # ╔═╡ bb33f478-b159-4cc8-8533-2dcdc4b2327b
-doc.prolog.dtd[1][1]
+doc.root
 
 # ╔═╡ 5770078e-f1fb-4c97-8f11-7f9e73248ee3
 print(doc.prolog.dtd[1][1])
@@ -738,6 +764,7 @@ recognize(BNFRef(:XML, "doctypedecl"), xml)
 recognize(BNFRef(:XML, "prolog"), xml)
 
 # ╔═╡ Cell order:
+# ╠═1e9c0f53-6cad-4e35-8868-15374f528f32
 # ╠═60d1e8e8-6837-11f1-85a8-b7dded61141e
 # ╠═fa42f1e7-f0dc-4fbb-916b-161e19ad851e
 # ╠═13ce8946-2c9c-4177-8f1b-4693f0d922b7
@@ -775,20 +802,23 @@ recognize(BNFRef(:XML, "prolog"), xml)
 # ╠═46daf523-b0c5-4586-9877-ac4a09e60c60
 # ╠═a31c23db-321b-497e-b1be-19c6ba864cdb
 # ╠═02a5daca-56f4-4da2-abce-450005238b31
+# ╟─bf8cb073-8212-4553-be5c-2fcf11aa1321
 # ╠═eaf455d3-fa8d-4d67-9b98-09f34daaad1a
-# ╠═9bdb0817-3ceb-423f-ba0d-2cc8dd1d5ae2
+# ╟─c6d29e05-4270-4f30-b088-e9e62e44c066
+# ╟─9bdb0817-3ceb-423f-ba0d-2cc8dd1d5ae2
 # ╠═76cb9eb7-8f58-4fb3-8ed5-179a7acc1f1d
-# ╠═b6228446-df0e-4889-9101-e9f30e8ea7ed
+# ╟─b6228446-df0e-4889-9101-e9f30e8ea7ed
 # ╠═83ef2ebb-1ab0-442e-8658-95a4b8954452
+# ╟─74020c13-4105-4e8f-b9ee-90c3f5338a67
 # ╠═f19e2d7f-a0c7-4906-8285-eab6b20b9feb
 # ╠═d20a727a-e4c5-49d0-acae-5836a541f0d0
 # ╠═87e7f1c4-613b-4537-8d02-481d1b8112ef
 # ╠═51012dd6-39d3-4377-9a4f-b73e4acb650d
 # ╠═f7acb4e5-11fb-4fab-bfbf-d3593961f517
 # ╠═e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
+# ╠═b91fe301-7a6d-425d-b835-db7654b8cf24
 # ╠═2995e9d6-8eeb-4908-9ddc-5a2fee23d65e
 # ╠═0b831028-dc8b-41fb-8776-34da514f07a5
-# ╠═381f3a26-82e8-46ef-8a52-1eb7c4fca82e
 # ╠═bb33f478-b159-4cc8-8533-2dcdc4b2327b
 # ╠═5770078e-f1fb-4c97-8f11-7f9e73248ee3
 # ╠═6d55c633-fe8f-4ca0-9d02-5f3bae57a19b
