@@ -276,7 +276,9 @@ begin
 				  n.start_tag_trailing_whitespace...,
 				  "/>")
         else
-            print(io, "<", n.tag, n.attributes, ">",
+            print(io, "<", n.tag, n.attributes, 
+				  n.start_tag_trailing_whitespace...,
+				  ">",
                   n.content...,
                   "</", n.tag,
 				  n.end_tag_trailing_whitespace...,
@@ -723,7 +725,10 @@ doc = recognize(BNFRef(:XML, "document"), xml)[2]
 print(doc)
 
 # ╔═╡ e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
-doc.prolog.dtd
+doc.root
+
+# ╔═╡ 8e46e559-3d77-4229-a874-446ff18447a4
+print(doc.root)
 
 # ╔═╡ b91fe301-7a6d-425d-b835-db7654b8cf24
 print(doc.prolog)
@@ -816,6 +821,7 @@ recognize(BNFRef(:XML, "prolog"), xml)
 # ╠═51012dd6-39d3-4377-9a4f-b73e4acb650d
 # ╠═f7acb4e5-11fb-4fab-bfbf-d3593961f517
 # ╠═e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
+# ╠═8e46e559-3d77-4229-a874-446ff18447a4
 # ╠═b91fe301-7a6d-425d-b835-db7654b8cf24
 # ╠═2995e9d6-8eeb-4908-9ddc-5a2fee23d65e
 # ╠═0b831028-dc8b-41fb-8776-34da514f07a5
