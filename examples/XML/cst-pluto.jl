@@ -163,6 +163,18 @@ begin
     Base.Char(c::CSTCharRef) = Char(codepoint(c))
 end
 
+# ╔═╡ 96034286-77f3-47c5-b4d4-f702e5107293
+begin
+    struct CSTEq <: CSTNode
+        preceeding_whitespace::CSTWhitespace
+        trailing_whitespace::CSTWhitespace
+    end
+
+    Base.print(io::IO, n::CSTEq) = 
+        print(io, n.preceeding_whitespace, "=", n.trailing_whitespace)
+
+end
+
 # ╔═╡ 718e0ae3-93af-48e7-9a73-b0ed014327b0
 begin
     const CSTAttValueFragment = Union{
@@ -186,19 +198,20 @@ begin
 
     mutable struct CSTAttribute <: CSTNode
         name::CSTName
+		eq::CSTEq
         value::CSTAttValue
         preceeding_whitespace::CSTWhitespace
 
-        CSTAttribute(name::CSTName, value::CSTAttValue,
+        CSTAttribute(name::CSTName, eq::CSTEq, value::CSTAttValue,
                      preceeding_whitespace::CSTWhitespace) =
-            new(name, value, preceeding_whitespace)
+            new(name, eq, value, preceeding_whitespace)
 
-        CSTAttribute(name::CSTName, value::CSTAttValue) =
-            new(name, value, CSTWhitespace(""))
+        CSTAttribute(name::CSTName, eq::CSTEq, value::CSTAttValue) =
+            new(name, eq, value, CSTWhitespace(""))
     end
 
     function Base.print(io::IO, n::CSTAttribute)
-        print(io, "$(n.name)=$(n.value)")
+        print(io, n.name, n.eq, n.value)
     end
 
     function Base.print(io::IO, attributes::Vector{CSTAttribute})
@@ -206,18 +219,6 @@ begin
             print(io, a.preceeding_whitespace, a)
         end
     end
-
-end
-
-# ╔═╡ 96034286-77f3-47c5-b4d4-f702e5107293
-begin
-    struct CSTEq  <: CSTNode
-        preceeding_whitespace::CSTWhitespace
-        trailing_whitespace::CSTWhitespace
-    end
-
-    Base.print(io::IO, n::CSTEq) = 
-        print(io, n.preceeding_whitespace, "=", n.trailing_whitespace)
 
 end
 
@@ -711,7 +712,7 @@ conformance_dir = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
 
 # ╔═╡ d20a727a-e4c5-49d0-acae-5836a541f0d0
 begin
-	xml = read(joinpath(conformance_dir, "002.xml"), String)
+	xml = read(joinpath(conformance_dir, "005.xml"), String)
 	print(xml)
 end
 
@@ -723,6 +724,9 @@ doc = recognize(BNFRef(:XML, "document"), xml)[2]
 
 # ╔═╡ f7acb4e5-11fb-4fab-bfbf-d3593961f517
 print(doc)
+
+# ╔═╡ 42ee7d43-4ac5-4d3d-acad-b532a2378c86
+string(doc) == xml
 
 # ╔═╡ e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
 doc.root
@@ -751,22 +755,8 @@ print(doc.prolog.dtd[1]...)
 # ╔═╡ fda25e0d-4f44-4cdf-b8c4-2b109f55d661
 doc
 
-# ╔═╡ 0ad91462-ebf5-43c9-a263-7e1770665fcf
-for x in doc.prolog.dtd
-	print(x[1], x[2]...)
-end
-
-# ╔═╡ 5d150475-c447-4dcd-ab27-b4b80a42bb7f
-print(doc)
-
 # ╔═╡ 1e450fd6-4517-4316-87da-ca898854a346
 string(doc) == xml
-
-# ╔═╡ 4bff0cb4-6be7-441d-8a73-9e7facd3344d
-recognize(BNFRef(:XML, "doctypedecl"), xml)
-
-# ╔═╡ fdcc2a61-a5b9-4779-a6e4-920c60471ab2
-recognize(BNFRef(:XML, "prolog"), xml)
 
 # ╔═╡ Cell order:
 # ╠═1e9c0f53-6cad-4e35-8868-15374f528f32
@@ -820,6 +810,7 @@ recognize(BNFRef(:XML, "prolog"), xml)
 # ╠═87e7f1c4-613b-4537-8d02-481d1b8112ef
 # ╠═51012dd6-39d3-4377-9a4f-b73e4acb650d
 # ╠═f7acb4e5-11fb-4fab-bfbf-d3593961f517
+# ╠═42ee7d43-4ac5-4d3d-acad-b532a2378c86
 # ╠═e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
 # ╠═8e46e559-3d77-4229-a874-446ff18447a4
 # ╠═b91fe301-7a6d-425d-b835-db7654b8cf24
@@ -829,8 +820,4 @@ recognize(BNFRef(:XML, "prolog"), xml)
 # ╠═5770078e-f1fb-4c97-8f11-7f9e73248ee3
 # ╠═6d55c633-fe8f-4ca0-9d02-5f3bae57a19b
 # ╠═fda25e0d-4f44-4cdf-b8c4-2b109f55d661
-# ╠═0ad91462-ebf5-43c9-a263-7e1770665fcf
-# ╠═5d150475-c447-4dcd-ab27-b4b80a42bb7f
 # ╠═1e450fd6-4517-4316-87da-ca898854a346
-# ╠═4bff0cb4-6be7-441d-8a73-9e7facd3344d
-# ╠═fdcc2a61-a5b9-4779-a6e4-920c60471ab2

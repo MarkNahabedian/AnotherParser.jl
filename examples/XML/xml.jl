@@ -644,7 +644,7 @@ DerivationRule(:XML, "Attribute",
                    BNFRef(:XML, "AttValue"))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   CSTAttribute(value[1], value[3])
+                   CSTAttribute(value[1], value[2], value[3])
                end
 
 # [42]  https://www.w3.org/TR/xml/#NT-ETag
