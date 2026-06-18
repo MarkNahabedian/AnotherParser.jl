@@ -371,19 +371,8 @@ begin
 
 end
 
-# ╔═╡ 33bcb770-9e87-4925-922a-eae88b8536ba
-const CSTReference = Union{CSTEntityRef, CSTCharRef}
-
 # ╔═╡ 395327b7-dcfd-4b98-8e99-80fbe34e0e67
 begin
-    struct CSTEntityValue <: CSTNode
-        quotechar::Char
-        elements::Vector{Union{AbstractString, CSTPEReference, CSTReference}}
-    end
-
-    Base.print(io::IO, n::CSTEntityValue) =
-        print(io, n.quotechar, n.elements..., n.quotechar)
-
     struct CSTPEDecl <: CSTNode
         whitespace1::CSTWhitespace
         whitespace2::CSTWhitespace
@@ -391,6 +380,11 @@ begin
         whitespace3::CSTWhitespace
         pedef    # ::CSTPEDef
         whitespace4::CSTWhitespace
+
+		function CSTPEDecl(wsp1, wsp2, name, wsp3, pedef, wsp4)
+			# assert(pedef isa CSTPEDef)
+			new(wsp1, wsp2, name, wsp3, pedef, wsp4)
+		end
     end
 
     Base.print(io::IO, n::CSTPEDecl) =
@@ -399,6 +393,20 @@ begin
               n.pedef,
               n.whitespace4, ">")
 
+end
+
+# ╔═╡ 33bcb770-9e87-4925-922a-eae88b8536ba
+const CSTReference = Union{CSTEntityRef, CSTCharRef}
+
+# ╔═╡ a712d70f-5fe7-4ad2-8170-614e69759c43
+begin
+	struct CSTEntityValue <: CSTNode
+        quotechar::Char
+        elements::Vector{Union{AbstractString, CSTPEReference, CSTReference}}
+    end
+
+    Base.print(io::IO, n::CSTEntityValue) =
+        print(io, n.quotechar, n.elements..., n.quotechar)
 end
 
 # ╔═╡ c2dae9f6-4409-4435-9784-b5e24c590abd
@@ -495,12 +503,19 @@ end
 
 
 # ╔═╡ 29a6a54a-553b-4220-bbfc-27aa1815b0fb
+begin
 struct CSTGEDecl <: CSTNode
     whitespace1::CSTWhitespace
     name::CSTName
     whitespace2::CSTWhitespace
     entity_def::CSTEntityDef
-    whitespace3::Vector{CSTWhitespace}
+    whitespace3::CSTWhitespace
+end
+
+Base.print(io::IO, n::CSTGEDecl) =
+	print(io, "<!ENTITY", n.whitespace1,
+		  n.name, n.whitespace2, n.entity_def, n.whitespace3,
+		 ">")
 end
 
 # ╔═╡ 70e13e76-4609-49ab-b942-0343b60e68b7
@@ -559,6 +574,12 @@ begin
     end
 
 end
+
+# ╔═╡ 3fefde54-b0c8-4ff6-a360-a6975257c28c
+md"""# Info"""
+
+# ╔═╡ 83f0550b-aca7-4c50-b05a-dc3658460321
+subtypes(CSTNode)
 
 # ╔═╡ bf8cb073-8212-4553-be5c-2fcf11aa1321
 md"""# Testing"""
@@ -712,12 +733,9 @@ conformance_dir = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
 
 # ╔═╡ d20a727a-e4c5-49d0-acae-5836a541f0d0
 begin
-	xml = read(joinpath(conformance_dir, "005.xml"), String)
+	xml = read(joinpath(conformance_dir, "023.xml"), String)
 	print(xml)
 end
-
-# ╔═╡ 87e7f1c4-613b-4537-8d02-481d1b8112ef
-recognize(BNFRef(:XML, "document"), xml)
 
 # ╔═╡ 51012dd6-39d3-4377-9a4f-b73e4acb650d
 doc = recognize(BNFRef(:XML, "document"), xml)[2]
@@ -731,8 +749,11 @@ string(doc) == xml
 # ╔═╡ e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
 doc.root
 
+# ╔═╡ 516e015f-2166-4fba-986e-86e1b7ea4845
+doc
+
 # ╔═╡ 8e46e559-3d77-4229-a874-446ff18447a4
-print(doc.root)
+print(doc.prolog.dtd[1][1].internal_subset[4].entity_def)
 
 # ╔═╡ b91fe301-7a6d-425d-b835-db7654b8cf24
 print(doc.prolog)
@@ -781,6 +802,7 @@ string(doc) == xml
 # ╠═bda9fa7e-5796-4c8b-983b-b59f51347243
 # ╠═cb43accd-e2c5-48e3-8331-6ea62a00a237
 # ╠═064ad685-660e-4030-906b-cc5f889cad65
+# ╠═a712d70f-5fe7-4ad2-8170-614e69759c43
 # ╠═395327b7-dcfd-4b98-8e99-80fbe34e0e67
 # ╠═84550d9a-e785-4249-8125-398ae5467e0c
 # ╠═d8233096-0669-4d96-9067-79f024ec89b5
@@ -797,6 +819,8 @@ string(doc) == xml
 # ╠═46daf523-b0c5-4586-9877-ac4a09e60c60
 # ╠═a31c23db-321b-497e-b1be-19c6ba864cdb
 # ╠═02a5daca-56f4-4da2-abce-450005238b31
+# ╟─3fefde54-b0c8-4ff6-a360-a6975257c28c
+# ╠═83f0550b-aca7-4c50-b05a-dc3658460321
 # ╟─bf8cb073-8212-4553-be5c-2fcf11aa1321
 # ╠═eaf455d3-fa8d-4d67-9b98-09f34daaad1a
 # ╟─c6d29e05-4270-4f30-b088-e9e62e44c066
@@ -807,11 +831,11 @@ string(doc) == xml
 # ╟─74020c13-4105-4e8f-b9ee-90c3f5338a67
 # ╠═f19e2d7f-a0c7-4906-8285-eab6b20b9feb
 # ╠═d20a727a-e4c5-49d0-acae-5836a541f0d0
-# ╠═87e7f1c4-613b-4537-8d02-481d1b8112ef
 # ╠═51012dd6-39d3-4377-9a4f-b73e4acb650d
 # ╠═f7acb4e5-11fb-4fab-bfbf-d3593961f517
 # ╠═42ee7d43-4ac5-4d3d-acad-b532a2378c86
 # ╠═e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
+# ╠═516e015f-2166-4fba-986e-86e1b7ea4845
 # ╠═8e46e559-3d77-4229-a874-446ff18447a4
 # ╠═b91fe301-7a6d-425d-b835-db7654b8cf24
 # ╠═2995e9d6-8eeb-4908-9ddc-5a2fee23d65e

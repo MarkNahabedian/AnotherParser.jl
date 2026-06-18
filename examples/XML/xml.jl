@@ -163,11 +163,11 @@ DerivationRule(:XML, "EntityValue",
                             CharacterLiteral('\'')))
                ).constructor  =function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   # coalesce sequention abstract strings
+                   # coalesce sequential abstract strings
                    elts = []
                    for v in value[2]
                        if v isa AbstractString
-                           if !isempty(elts) && last(elts) isa AbstractString
+                           if (!isempty(elts)) && (last(elts) isa AbstractString)
                                elts[lastindex(elts)] *= v
                            else
                                push!(elts, v)
@@ -1060,7 +1060,11 @@ DerivationRule(:XML, "GEDecl",
                    BNFRef(:XML, "EntityDef"),
                    Repeat(BNFRef(:XML, "S"); max=1),
                    CharacterLiteral('>'))
-               )
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   CSTGEDecl(value[2], value[3], value[4], value[5],
+                             isempty(value[6]) ? CSTWhitespace("") : value[6][1])
+               end
 
 # [72]  https://www.w3.org/TR/xml/#NT-PEDecl
 #  PEDecl   ::=   '<!ENTITY' S '%' S Name S PEDef S? '>'
