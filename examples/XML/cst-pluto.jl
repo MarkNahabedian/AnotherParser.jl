@@ -17,6 +17,9 @@ using Markdown
 # ╔═╡ eaf455d3-fa8d-4d67-9b98-09f34daaad1a
 include(joinpath(@__DIR__, "../../examples/XML/xml.jl"))
 
+# ╔═╡ 639082ff-89f6-4221-ab7f-5a80bfc980d2
+include("byte_order_decoding.jl")
+
 # ╔═╡ 60d1e8e8-6837-11f1-85a8-b7dded61141e
 abstract type CSTNode end
 
@@ -312,11 +315,12 @@ end
 begin
     struct CSTNDataDecl <: CSTNode
         whitespace1::CSTWhitespace
+		whitespace2::CSTWhitespace
         name::CSTName
     end
 
     Base.print(io::IO, n::CSTNDataDecl) =
-        print(io, n.whitespace1, n.name)
+        print(io, n.whitespace1, "NDATA", n.whitespace2, n.name)
 
 end
 
@@ -490,8 +494,9 @@ const CSTPEDef = Union{CSTEntityValue,
 
 # ╔═╡ c763d5ab-dc90-477b-a9b3-c1ae15dc1970
 const CSTEntityDef = Union{CSTEntityValue,
-                           CSTExternalId,
-                           CSTNDataDecl}
+						   Tuple{CSTExternalId},
+                           Tuple{CSTExternalId,
+                           	     CSTNDataDecl}}
 
 
 # ╔═╡ 58ebea76-b1d9-45d8-a9a3-ffcb9390a19a
@@ -508,14 +513,26 @@ struct CSTGEDecl <: CSTNode
     whitespace1::CSTWhitespace
     name::CSTName
     whitespace2::CSTWhitespace
-    entity_def::CSTEntityDef
+    entity_def   # ::CSTEntityDef
     whitespace3::CSTWhitespace
+
+	function CSTGEDecl(wsp1, name, wsp2, ed, wsp3)
+		@assert((ed isa CSTEntityValue) ||
+			(ed isa Tuple{CSTExternalId}) ||
+				(ed isa Tuple{CSTExternalId, CSTNDataDecl}))
+		new(wsp1, name, wsp2, ed, wsp3)
+	end
 end
 
-Base.print(io::IO, n::CSTGEDecl) =
-	print(io, "<!ENTITY", n.whitespace1,
-		  n.name, n.whitespace2, n.entity_def, n.whitespace3,
-		 ">")
+function Base.print(io::IO, n::CSTGEDecl)
+	print(io, "<!ENTITY", n.whitespace1, n.name, n.whitespace2)
+	if n.entity_def isa Tuple
+		print(io, n.entity_def...)
+	else
+		print(io, n.entity_def)
+	end
+	print(io, n.whitespace3, ">")
+end
 end
 
 # ╔═╡ 70e13e76-4609-49ab-b942-0343b60e68b7
@@ -691,7 +708,7 @@ function run_conformance_tests()
             @info("Parsing", filename)
             file_count += 1
             xml = joinpath(valid_sa, filename)
-            xmltext = read(xml, String)
+            xmltext = read_decoded(xml)
             matched, v, i = try
                 recognize(AllGrammars[:XML]["document"], xmltext)
             catch e
@@ -703,6 +720,7 @@ function run_conformance_tests()
             if !matched
                 @warn("XML parse failed")
                 parse_failure_count += 1
+				push!(parse_failures, filename)
                 continue
             end
             serialized = string(v)
@@ -731,53 +749,205 @@ md"""## Hand Testing and Debugging"""
 # ╔═╡ f19e2d7f-a0c7-4906-8285-eab6b20b9feb
 conformance_dir = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
 
+# ╔═╡ 61298680-5bd0-4fbe-b113-4eae0def5ddc
+md"""
+### File 049.xml
+
+This file starts with the bytes `0xff 0xfe`, which corresponds with
+
+```
+UTF-16 (Big-Endian)FE FF
+```
+"""
+
+# ╔═╡ e735c04a-bbe4-4f56-b75e-fdbc3ae0bb93
+read(joinpath(conformance_dir, "049.xml"))[1:4]
+
+# ╔═╡ be8995b2-4a97-44e3-a8fb-ac08634f5127
+read_decoded(joinpath(conformance_dir, "049.xml"))
+
+# ╔═╡ 75eb6fcf-fdf8-4f3a-bede-35c7f724a041
+md"""
+### File 050.xml
+
+This file starts with `0xff 0xfe`, which corresponds with
+```
+UTF-16 (Little-Endian)FF FE
+```
+"""
+
+# ╔═╡ c786af9d-35f9-4eb3-a24f-02ad0ab6d67a
+read(joinpath(conformance_dir, "050.xml"))[1:4]
+
+# ╔═╡ ba9929ae-2504-4310-87b9-6670c574a40e
+md"""
+### File 051.xml
+
+Like `050.xml`, this file starts with `0xff 0xfe 0x3c 0x00`, which corresponds with
+```
+UTF-16 (Little-Endian)FF FE
+```
+"""
+
+# ╔═╡ 6529c7f4-1ee3-41e2-9236-2acdedca16b0
+read(joinpath(conformance_dir, "051.xml"))[1:4]
+
+# ╔═╡ 632b7baa-fb3e-4e02-a05d-8be3735a4a08
+md""" ### File 091.xml"""
+
+# ╔═╡ 252489fc-2417-48ab-aee8-75325d6643af
+joinpath(conformance_dir, "091.xml")
+
 # ╔═╡ d20a727a-e4c5-49d0-acae-5836a541f0d0
 begin
-	xml = read(joinpath(conformance_dir, "023.xml"), String)
+	xml = read_decoded(joinpath(conformance_dir, "091.xml"))
 	print(xml)
 end
+
+# ╔═╡ b6222567-e1fd-4f3c-95a3-ca69cf181791
+recognize(BNFRef(:XML, "document"), xml)
 
 # ╔═╡ 51012dd6-39d3-4377-9a4f-b73e4acb650d
 doc = recognize(BNFRef(:XML, "document"), xml)[2]
 
 # ╔═╡ f7acb4e5-11fb-4fab-bfbf-d3593961f517
-print(doc)
+(doc.prolog.dtd[1][1])
 
 # ╔═╡ 42ee7d43-4ac5-4d3d-acad-b532a2378c86
 string(doc) == xml
 
-# ╔═╡ e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
-doc.root
+# ╔═╡ 327bd9f4-de0d-468c-92a3-5cc0141d6858
+recognize(BNFRef(:XML, "doctypedecl"), xml)
 
-# ╔═╡ 516e015f-2166-4fba-986e-86e1b7ea4845
-doc
+# ╔═╡ 55b013e4-fb9e-447b-86fe-be2d2906abf4
+findall("[", xml)
 
-# ╔═╡ 8e46e559-3d77-4229-a874-446ff18447a4
-print(doc.prolog.dtd[1][1].internal_subset[4].entity_def)
+# ╔═╡ 05a62a82-c09a-48d1-8c3d-9ba1fa87519d
+recognize(BNFRef(:XML, "intSubset"), xml; index=16)
 
-# ╔═╡ b91fe301-7a6d-425d-b835-db7654b8cf24
-print(doc.prolog)
+# ╔═╡ cd4e0c7e-16a9-46e5-a10c-7ac1bb2feee7
+recognize(BNFRef(:XML, "markupdecl"), xml; index=18)
 
-# ╔═╡ 2995e9d6-8eeb-4908-9ddc-5a2fee23d65e
-print(doc.prolog.dtd[1][1].external_id...)
+# ╔═╡ f54fbc66-2843-4b27-948f-7162bbd21f77
+recognize(BNFRef(:XML, "S"), xml; index=59)
 
-# ╔═╡ 0b831028-dc8b-41fb-8776-34da514f07a5
-print(doc.prolog.dtd[1][1].internal_subset...)
+# ╔═╡ d10f9f89-ac33-4f89-a73e-3d31580211f8
+recognize(BNFRef(:XML, "markupdecl"), xml; index=61)
 
-# ╔═╡ bb33f478-b159-4cc8-8533-2dcdc4b2327b
-doc.root
+# ╔═╡ 2c796f8b-5137-4859-8a17-6ebde76c210c
+md"""#### @61 Doesn't parse as `markupdecl`."""
 
-# ╔═╡ 5770078e-f1fb-4c97-8f11-7f9e73248ee3
-print(doc.prolog.dtd[1][1])
+# ╔═╡ 0686747d-a98f-40f9-a62d-2d9f3d839039
+SubString(xml, 61)
 
-# ╔═╡ 6d55c633-fe8f-4ca0-9d02-5f3bae57a19b
-print(doc.prolog.dtd[1]...)
+# ╔═╡ 4bf96a73-f97d-482f-bd91-fc3c3a2f2a7c
+recognize(StringLiteral("<!ENTITY"), xml; index=61)
 
-# ╔═╡ fda25e0d-4f44-4cdf-b8c4-2b109f55d661
-doc
+# ╔═╡ 5c3abb39-e049-45e6-8292-e0e599553dc4
+recognize(BNFRef(:XML, "S"), xml; index=69)
 
-# ╔═╡ 1e450fd6-4517-4316-87da-ca898854a346
-string(doc) == xml
+# ╔═╡ bc20f35c-87bb-451a-aa15-e695d4bb36cd
+recognize(BNFRef(:XML, "Name"), xml; index=70)
+
+# ╔═╡ a0d67b58-6717-44f9-a4e1-f3a283dfa592
+recognize(BNFRef(:XML, "S"), xml; index=71)
+
+# ╔═╡ 84af796f-c143-42e4-8621-45f0d82da3cf
+md"""
+#### @72 parses as an `EntityDef`
+"""
+
+# ╔═╡ 3a5666b5-4db6-45ae-b478-193f724fa6a7
+recognize(BNFRef(:XML, "EntityDef"), xml; index=72)
+
+# ╔═╡ 1bff1503-3575-47ec-bcd7-5d157d6bcb12
+SubString(xml, 72, 99)
+
+# ╔═╡ 5bc8406d-978d-4f69-ab73-c0037d8f41b7
+recognize(BNFRef(:XML, "S"), xml; index=99)
+
+# ╔═╡ cf1e9515-7b2d-4fd2-b713-bb6469291de0
+recognize(CharacterLiteral('>'), xml; index=100)
+
+# ╔═╡ 5cb29dd6-d604-4fa5-819f-08e0cb728b31
+SubString(xml, 99)
+
+# ╔═╡ f87a20af-5dc6-46d2-956d-e29f95e032a0
+md"""
+#### @99 does parse as `NDataDecl`
+```
+EntityDef   ::=   EntityValue | (ExternalID NDataDecl?)
+GEDecl   ::=   '<!ENTITY' S Name S EntityDef S? '>'
+EntityDecl   ::=   GEDecl | PEDecl
+markupdecl  ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment
+```
+"""
+
+# ╔═╡ 626fe89b-53a5-459a-be66-5341cafea6b2
+recognize(BNFRef(:XML, "NDataDecl"), xml; index=99)
+
+# ╔═╡ 3e1a2aef-ac23-4ea5-baf6-dc367500f913
+SubString(xml, 61)
+
+# ╔═╡ f79175e2-ff6d-4342-ae9e-d4462aa91793
+recognize(BNFRef(:XML, "Comment"), xml; index=61)
+
+# ╔═╡ b4cdd77c-aa6f-45e8-a73a-481239f318ae
+md"""
+### 100.xml
+
+"""
+
+# ╔═╡ b9644048-d1b9-42dd-8d42-e5b974d45688
+xml100 = read_decoded(joinpath(conformance_dir, "100.xml"))
+
+# ╔═╡ f148d2d7-8818-4765-8cd0-cd04695ec38f
+print(xml100)
+
+# ╔═╡ 13daecfa-7bc9-4a04-8d88-cfc1abcb719a
+xml100
+
+# ╔═╡ 8319d242-a824-47ef-8a21-2bdcb261dd68
+recognize(BNFRef(:XML, "document"), xml100)
+
+# ╔═╡ 8528d149-33af-4dc8-b65b-d6ed8d9a15f7
+doc100 = recognize(BNFRef(:XML, "document"), xml100)[2]
+
+# ╔═╡ c8b5f98d-1c26-46aa-a463-492594ef1fca
+(doc100.prolog.dtd[1][1].internal_subset[2])
+
+# ╔═╡ 377b2a76-705e-4847-8f04-70ccaac75f3e
+print(doc100.prolog.dtd[1][1].internal_subset[2])
+
+# ╔═╡ ee924d5d-0f68-436e-8837-170afd46b20b
+doc100.prolog.dtd[1][1].internal_subset[2].entity_def
+
+# ╔═╡ 6f76f0e2-fc38-4a0a-bc3e-f2642a9e52ed
+print(doc100.prolog.dtd[1][1].internal_subset[2].entity_def...)
+
+# ╔═╡ c6983b08-29cd-4606-9782-22476374f8fe
+print(doc100)
+
+# ╔═╡ 53b84b7e-0812-4b27-bbb9-a8b35de1f5b6
+string(doc100) == xml100
+
+# ╔═╡ 1f58d00b-7305-473e-b85c-fcec7e430999
+findall("<!ENTITY", xml100)
+
+# ╔═╡ d441b591-e603-466a-9095-95a13f86eec2
+print(SubString(xml100, 18))
+
+# ╔═╡ 1a20f51e-8ffc-42bd-bedb-af14d5ffaee5
+recognize(BNFRef(:XML, "EntityDecl"), xml100; index=18)
+
+# ╔═╡ ba1dca35-751a-45de-8b1f-d245a56f631a
+findall("<!ELEMENT", xml100)
+
+# ╔═╡ c6cfdbf2-a95c-4f46-96c3-b67d53cca1b9
+SubString(xml100, 59)
+
+# ╔═╡ 28814f60-8979-4e2c-9edf-bcd6e9f553e1
+print(recognize(BNFRef(:XML, "elementdecl"), xml100; index=59)[2])
 
 # ╔═╡ Cell order:
 # ╠═1e9c0f53-6cad-4e35-8868-15374f528f32
@@ -823,25 +993,65 @@ string(doc) == xml
 # ╠═83f0550b-aca7-4c50-b05a-dc3658460321
 # ╟─bf8cb073-8212-4553-be5c-2fcf11aa1321
 # ╠═eaf455d3-fa8d-4d67-9b98-09f34daaad1a
+# ╠═639082ff-89f6-4221-ab7f-5a80bfc980d2
 # ╟─c6d29e05-4270-4f30-b088-e9e62e44c066
 # ╟─9bdb0817-3ceb-423f-ba0d-2cc8dd1d5ae2
 # ╠═76cb9eb7-8f58-4fb3-8ed5-179a7acc1f1d
-# ╟─b6228446-df0e-4889-9101-e9f30e8ea7ed
+# ╠═b6228446-df0e-4889-9101-e9f30e8ea7ed
 # ╠═83ef2ebb-1ab0-442e-8658-95a4b8954452
 # ╟─74020c13-4105-4e8f-b9ee-90c3f5338a67
 # ╠═f19e2d7f-a0c7-4906-8285-eab6b20b9feb
+# ╟─61298680-5bd0-4fbe-b113-4eae0def5ddc
+# ╠═e735c04a-bbe4-4f56-b75e-fdbc3ae0bb93
+# ╠═be8995b2-4a97-44e3-a8fb-ac08634f5127
+# ╟─75eb6fcf-fdf8-4f3a-bede-35c7f724a041
+# ╠═c786af9d-35f9-4eb3-a24f-02ad0ab6d67a
+# ╟─ba9929ae-2504-4310-87b9-6670c574a40e
+# ╠═6529c7f4-1ee3-41e2-9236-2acdedca16b0
+# ╟─632b7baa-fb3e-4e02-a05d-8be3735a4a08
+# ╠═252489fc-2417-48ab-aee8-75325d6643af
 # ╠═d20a727a-e4c5-49d0-acae-5836a541f0d0
+# ╠═b6222567-e1fd-4f3c-95a3-ca69cf181791
 # ╠═51012dd6-39d3-4377-9a4f-b73e4acb650d
 # ╠═f7acb4e5-11fb-4fab-bfbf-d3593961f517
 # ╠═42ee7d43-4ac5-4d3d-acad-b532a2378c86
-# ╠═e31687d7-cfd1-4ef2-87aa-18bb8ce5e556
-# ╠═516e015f-2166-4fba-986e-86e1b7ea4845
-# ╠═8e46e559-3d77-4229-a874-446ff18447a4
-# ╠═b91fe301-7a6d-425d-b835-db7654b8cf24
-# ╠═2995e9d6-8eeb-4908-9ddc-5a2fee23d65e
-# ╠═0b831028-dc8b-41fb-8776-34da514f07a5
-# ╠═bb33f478-b159-4cc8-8533-2dcdc4b2327b
-# ╠═5770078e-f1fb-4c97-8f11-7f9e73248ee3
-# ╠═6d55c633-fe8f-4ca0-9d02-5f3bae57a19b
-# ╠═fda25e0d-4f44-4cdf-b8c4-2b109f55d661
-# ╠═1e450fd6-4517-4316-87da-ca898854a346
+# ╠═327bd9f4-de0d-468c-92a3-5cc0141d6858
+# ╠═55b013e4-fb9e-447b-86fe-be2d2906abf4
+# ╠═05a62a82-c09a-48d1-8c3d-9ba1fa87519d
+# ╠═cd4e0c7e-16a9-46e5-a10c-7ac1bb2feee7
+# ╠═f54fbc66-2843-4b27-948f-7162bbd21f77
+# ╠═d10f9f89-ac33-4f89-a73e-3d31580211f8
+# ╟─2c796f8b-5137-4859-8a17-6ebde76c210c
+# ╠═0686747d-a98f-40f9-a62d-2d9f3d839039
+# ╠═4bf96a73-f97d-482f-bd91-fc3c3a2f2a7c
+# ╠═5c3abb39-e049-45e6-8292-e0e599553dc4
+# ╠═bc20f35c-87bb-451a-aa15-e695d4bb36cd
+# ╠═a0d67b58-6717-44f9-a4e1-f3a283dfa592
+# ╟─84af796f-c143-42e4-8621-45f0d82da3cf
+# ╠═3a5666b5-4db6-45ae-b478-193f724fa6a7
+# ╠═1bff1503-3575-47ec-bcd7-5d157d6bcb12
+# ╠═5bc8406d-978d-4f69-ab73-c0037d8f41b7
+# ╠═cf1e9515-7b2d-4fd2-b713-bb6469291de0
+# ╠═5cb29dd6-d604-4fa5-819f-08e0cb728b31
+# ╟─f87a20af-5dc6-46d2-956d-e29f95e032a0
+# ╠═626fe89b-53a5-459a-be66-5341cafea6b2
+# ╠═3e1a2aef-ac23-4ea5-baf6-dc367500f913
+# ╠═f79175e2-ff6d-4342-ae9e-d4462aa91793
+# ╟─b4cdd77c-aa6f-45e8-a73a-481239f318ae
+# ╠═b9644048-d1b9-42dd-8d42-e5b974d45688
+# ╠═f148d2d7-8818-4765-8cd0-cd04695ec38f
+# ╠═13daecfa-7bc9-4a04-8d88-cfc1abcb719a
+# ╠═8319d242-a824-47ef-8a21-2bdcb261dd68
+# ╠═8528d149-33af-4dc8-b65b-d6ed8d9a15f7
+# ╠═c8b5f98d-1c26-46aa-a463-492594ef1fca
+# ╠═377b2a76-705e-4847-8f04-70ccaac75f3e
+# ╠═ee924d5d-0f68-436e-8837-170afd46b20b
+# ╠═6f76f0e2-fc38-4a0a-bc3e-f2642a9e52ed
+# ╠═c6983b08-29cd-4606-9782-22476374f8fe
+# ╠═53b84b7e-0812-4b27-bbb9-a8b35de1f5b6
+# ╠═1f58d00b-7305-473e-b85c-fcec7e430999
+# ╠═d441b591-e603-466a-9095-95a13f86eec2
+# ╠═1a20f51e-8ffc-42bd-bedb-af14d5ffaee5
+# ╠═ba1dca35-751a-45de-8b1f-d245a56f631a
+# ╠═c6cfdbf2-a95c-4f46-96c3-b67d53cca1b9
+# ╠═28814f60-8979-4e2c-9edf-bcd6e9f553e1

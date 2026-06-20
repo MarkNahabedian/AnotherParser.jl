@@ -1092,9 +1092,16 @@ DerivationRule(:XML, "EntityDef",
                    BNFRef(:XML, "EntityValue"),
                    Sequence(
                        BNFRef(:XML, "ExternalID"),
-                       Repeat(Repeat(BNFRef(:XML, "NDataDecl");
-                                     max=1))))
-               )
+                       Repeat(BNFRef(:XML, "NDataDecl");
+                              max=1)))
+               ).constructor = function(context, input::AbstractString,
+                                        from::Int, to::Int, value)
+                   if value isa CSTEntityValue
+                       value
+                   else
+                       (value[1], value[2]...)
+                   end
+               end
 
 # [74]  https://www.w3.org/TR/xml/#NT-PEDef
 #  PEDef   ::=   EntityValue | ExternalID
@@ -1130,12 +1137,13 @@ DerivationRule(:XML, "ExternalID",
 #  NDataDecl  ::=  S 'NDATA' S Name
 DerivationRule(:XML, "NDataDecl",
                Sequence(
+                   BNFRef(:XML, "S"),
                    StringLiteral("NDATA"),
                    BNFRef(:XML, "S"),
                    BNFRef(:XML, "Name"))
                ).constructor = function(context, input::AbstractString,
                                         from::Int, to::Int, value)
-                   CSTNDataDecl(value[2], value[3])
+                   CSTNDataDecl(value[1], value[3], value[4])
                end
 
 # [77]
