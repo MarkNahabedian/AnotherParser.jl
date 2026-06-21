@@ -2,10 +2,10 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "f2a7a257890b7057dd299097a4a31f6d863f63b6"
+project_hash = "791024394a8305e8d04dd62282e8a288f72e9e8a"
 
 [[deps.AnotherParser]]
-deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "Parameters", "PrettyPrint", "Printf", "Test", "VectorLogging", "XML"]
+deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "Test", "VectorLogging", "XML"]
 path = "."
 uuid = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 version = "0.1.0-dev"
@@ -306,6 +306,11 @@ version = "0.2.0"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
+
+[[deps.PropertyMethods]]
+git-tree-sha1 = "6a4b1f62d366073837f350cfdccdfe3477ff2535"
+uuid = "347c79ec-5835-41b8-b087-11d269c34aff"
+version = "1.0.0"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "JuliaSyntaxHighlighting", "Markdown", "Sockets", "StyledStrings", "Unicode"]

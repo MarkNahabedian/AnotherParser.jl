@@ -7,7 +7,7 @@ export BNFGrammar, DerivationRule
 export AllGrammars
 export walk_nodes, print_uid_index
 
-using NahaJuliaLib
+using PropertyMethods
 
 trace_recognize = false
 
@@ -45,7 +45,7 @@ The `context` argument is passed to constructor functions
 (see `Constructor` and `DerivationRule`) but
 is otherwise unused.
 """
-@trace trace_recognize recognize(n::BNFNode, input::AbstractString;
+recognize(n::BNFNode, input::AbstractString;
                                  index=1, finish=lastindex(input),
                                  parser=Parser(),
                                  context=nothing) =
@@ -70,7 +70,7 @@ end
 
 pretty(::EndOfInput) = "EndOfInput()"
 
-@trace trace_recognize function recognize(p::Parser, n::EndOfInput,
+function recognize(p::Parser, n::EndOfInput,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     return exhausted(input, index, finish), nothing, index
@@ -87,7 +87,7 @@ end
 
 pretty(::Empty) = "Empty()"
 
-@trace trace_recognize function recognize(p::Parser, n::Empty,
+function recognize(p::Parser, n::Empty,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     return true, nothing, index
@@ -113,7 +113,7 @@ pretty(n::Sequence) = *("Sequence(",
 is_left_recursive(node::Sequence, grammar::Symbol, name::AbstractString) =
     is_left_recursive(first(node.elements), grammar, name)
 
-@trace trace_recognize function recognize(p::Parser, n::Sequence,
+function recognize(p::Parser, n::Sequence,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     collected = []
@@ -149,7 +149,7 @@ pretty(n::Alternatives) = *("Alternatives(",
 is_left_recursive(node::Alternatives, grammar::Symbol, name::AbstractString) =
     any(n -> is_left_recursive(n, grammar, name), node.alternatives)
 
-@trace trace_recognize function recognize(p::Parser, n::Alternatives,
+function recognize(p::Parser, n::Alternatives,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     # Greedy match: choose the alternative that consumes the most
@@ -199,7 +199,7 @@ pretty(n::Repeat) = *("Repeat(",
 is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.node, grammar, name)
 
-@trace trace_recognize function recognize(p::Parser, n::Repeat,
+function recognize(p::Parser, n::Repeat,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     result = []
@@ -244,7 +244,7 @@ pretty(n::CharacterLiteral) = *("CharacterLiteral('",
                                 n.character,
                                 "')")
 
-@trace trace_recognize function recognize(p::Parser, n::CharacterLiteral,
+function recognize(p::Parser, n::CharacterLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     if exhausted(input, index, finish)
@@ -275,7 +275,7 @@ pretty(n::CharacterInSet) = *("CharacterInSet([",
                                 n.chars...,
                                 "])")
 
-@trace trace_recognize function recognize(p::Parser, n::CharacterInSet,
+function recognize(p::Parser, n::CharacterInSet,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     if exhausted(input, index, finish)
@@ -302,7 +302,7 @@ pretty(n::CharacterSatisfiesPredicate) = *("CharacterSatisfiesPredicate(",
                                            string(n.predicate),
                                            ")")
 
-@trace trace_recognize function recognize(p::Parser, n::CharacterSatisfiesPredicate,
+function recognize(p::Parser, n::CharacterSatisfiesPredicate,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     c = input[index]
@@ -326,7 +326,7 @@ pretty(n::StringLiteral) = *("StringLiteral(\"",
                              n.str,
                              "\")")
 
-@trace trace_recognize function recognize(p::Parser, n::StringLiteral,
+function recognize(p::Parser, n::StringLiteral,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     if length(n.str) == 0
@@ -362,7 +362,7 @@ pretty(n::RegexNode) = *("RegexNode(",
                          string(n.re),
                          ")")
 
-@trace trace_recognize function recognize(p::Parser, n::RegexNode,
+function recognize(p::Parser, n::RegexNode,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     m = match(n.re, input, index)
@@ -405,7 +405,7 @@ function loggingReductions(f, log=true)
     end
 end
 
-@trace trace_recognize function recognize(p::Parser, n::Constructor,
+function recognize(p::Parser, n::Constructor,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize1(p, n.node, input, index, finish, context)
@@ -501,7 +501,7 @@ be called with the recognized value, and the context.
         DerivationRule(AllGrammars[grammar_name], name, lhs; add_to_grammar)
 end
 
-@njl_getprop DerivationRule
+@property_trampolines DerivationRule
 
 Base.getproperty(p::DerivationRule, ::Val{:grammar}) =
     return AllGrammars[p.grammar_name]
@@ -517,7 +517,7 @@ is_left_recursive(node::DerivationRule) = is_left_recursive(node, node.grammar_n
 is_left_recursive(node::DerivationRule, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.lhs, grammar, name)
 
-@trace trace_recognize function recognize(p::Parser, n::DerivationRule,
+function recognize(p::Parser, n::DerivationRule,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize1(p, n.lhs, input, index, finish, context)
@@ -567,7 +567,7 @@ in `grammar`.
         new(grammar.name, name)
 end
 
-@njl_getprop BNFRef
+@property_trampolines BNFRef
 
 Base.getproperty(p::BNFRef, ::Val{:grammar}) =
     AllGrammars[p.grammar_name]
@@ -580,7 +580,7 @@ pretty(n::BNFRef) = "BNFRef(" * n.name * ")"
 is_left_recursive(node::BNFRef, grammar::Symbol, name::AbstractString) =
     node.grammar_name == grammar && node.name == name
 
-@trace trace_recognize function recognize(p::Parser, n::BNFRef,
+function recognize(p::Parser, n::BNFRef,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     recognize1(p, n.target, input, index, finish, context)
@@ -604,7 +604,7 @@ is_left_recursive(node::Excluding, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.exclude, grammar, name) ||
     is_left_recursive(node.match, grammar, name)
 
-@trace trace_recognize function recognize(p::Parser, n::Excluding,
+function recognize(p::Parser, n::Excluding,
                                           input::AbstractString, index::Int, finish::Int,
                                           context::Any)
     matched, v, i = recognize1(p, n.exclude, input, index, finish, context)
