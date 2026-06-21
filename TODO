@@ -1,5 +1,8 @@
 TODO:
 
+A way to have recognize report at what index it failed to match what
+expression.
+
 Do we want a BNFNode type that's RepeatWithSeparator, or add a
 separator::BNFNode keyarg to Repeat.
 
