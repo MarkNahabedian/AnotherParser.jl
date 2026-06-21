@@ -2,10 +2,10 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "791024394a8305e8d04dd62282e8a288f72e9e8a"
+project_hash = "45a4bff76bc69ef926a09767bc956281b5eb8eeb"
 
 [[deps.AnotherParser]]
-deps = ["DataStructures", "Logging", "MacroTools", "NahaJuliaLib", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "Test", "VectorLogging", "XML"]
+deps = ["DataStructures", "Logging", "MacroTools", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "Test", "VectorLogging", "XML"]
 path = "."
 uuid = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 version = "0.1.0-dev"
@@ -235,14 +235,6 @@ deps = ["Printf", "Tables"]
 git-tree-sha1 = "3cbd5dda543bc59f2e482607ccf84b633724fc32"
 uuid = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 version = "1.0.21"
-
-[[deps.NahaJuliaLib]]
-deps = ["CompatHelper", "DataStructures", "HTTP", "InteractiveUtils", "Logging", "MacroTools", "Pkg", "PkgTemplates", "TOML", "URIs", "VectorLogging"]
-git-tree-sha1 = "82b6961852530e21fd196520517d19c0968ce793"
-repo-rev = "master"
-repo-url = "https://github.com/MarkNahabedian/NahaJuliaLib.jl"
-uuid = "9569be99-1faa-4e84-9751-444b87a7f9a0"
-version = "0.1.0"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"

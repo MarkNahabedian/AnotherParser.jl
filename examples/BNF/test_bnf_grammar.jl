@@ -1,6 +1,5 @@
 using Logging
 using VectorLogging
-using NahaJuliaLib
 
 include("node_equivalence.jl")
 include("test_nodeeq.jl")
