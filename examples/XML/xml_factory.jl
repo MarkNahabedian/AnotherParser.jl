@@ -8,6 +8,7 @@ export AbstractXMLFactory, xmlDocument, xmlDTD, xmlComment, xmlText,
 abstract type AbstractXMLFactory end
 
 function unsupported_xml(factory, constructor, args...)
+    @warn("unsupported_xml", factory, constructor, args)
     (:unsupported_xml, factory, constructor, args...)
 end
 
@@ -122,6 +123,17 @@ function xmlCData(factory::AbstractXMLFactory, input::AbstractString, from::Int,
     unsupported_xml(factory, xmlCData, value)
 end
 
+
+"""
+    xmlCData(factory::AbstractXMLFactory, tarfget::AbstractString, content::AbstractString)
+
+Constructs the representation of a Processing Instruction.  Note that
+in the XML Infoset, these include DTD content likke ELEMENT and
+ENTITY.
+"""
+function xmlPI(factory::AbstractXMLFactory, ::Any...)   # tarfget::AbstractString, content::AbstractString)
+    unsupported_xml(factory, xmlPI, value)
+end
 
 #=
 
