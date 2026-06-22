@@ -1,3 +1,8 @@
+Pkg.activate(@__DIR__)
 
-include("xml_factory.jl")
+using Pkg
+using AnotherParser
+
+include("cst.jl")
 include("xml.jl")
+

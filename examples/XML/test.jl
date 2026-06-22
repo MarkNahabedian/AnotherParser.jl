@@ -1,7 +1,5 @@
-using AnotherParser
 
-include("cst.jl")
-include("xml.jl")
+include("includes.jl")
 
 include("cst_unit_tests.jl")
 
