@@ -1,5 +1,4 @@
 using Logging
-using VectorLogging
 
 include("node_equivalence.jl")
 include("test_nodeeq.jl")
@@ -13,7 +12,6 @@ function showingTraces(body, mod::Module, vbl::Symbol, showtraces::Bool)
     logfile = tempname()
     logformat = SerializationLogFileFormat()
     println("***** log file: $logfile")
-    # logger = VectorLogger()
     result = nothing
     try
         setv(showtraces)

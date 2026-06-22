@@ -13,7 +13,6 @@ PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 PropertyMethods = "347c79ec-5835-41b8-b087-11d269c34aff"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-VectorLogging = "ec499083-3b8a-4310-a81e-8622934b14d2"
 XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
 
 [sources]
