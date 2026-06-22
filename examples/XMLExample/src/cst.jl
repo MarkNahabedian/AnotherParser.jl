@@ -7,7 +7,17 @@
 
 export CSTNode
 
-include("byte_order_decoding.jl")
+export CSTAttDef, CSTAttValue, CSTAttlistDecl, CSTAttribute,
+    CSTCharData, CSTCharRef, CSTComment, CSTDeclAttr, CSTDocTypeDecl,
+    CSTDocument, CSTElement, CSTElementDecl, CSTEntityRef, CSTEntityValue,
+    CSTEq, CSTExtIdPublic, CSTExtIdSystem, CSTGEDecl, CSTNDataDecl,
+    CSTName, CSTNotationDecl, CSTPEDecl, CSTPEReference,
+    CSTProcessingInstruction, CSTProlog, CSTPublicID, CSTWhitespace,
+    CSTXMLDecl
+
+export CSTAttValueFragment, CSTReference, CSTMisc, CSTExternalId,
+    CSTPEDef, CSTEntityDef, CSTEntityDecl, CSTMarkupDecl, CSTDeclSep,
+    CSTIntSubset
 
 abstract type CSTNode end
 
