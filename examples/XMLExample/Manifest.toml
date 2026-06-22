@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "e0a3c79e005039afefc9dba0e78e7ed76293e8f2"
+project_hash = "250b1652953f836a0a260588b56d210aaceb208c"
 
 [[deps.AnotherParser]]
 deps = ["DataStructures", "Logging", "MacroTools", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "PropertyMethods", "Test", "XML"]
@@ -272,6 +272,12 @@ deps = ["Mmap", "OrderedCollections"]
 git-tree-sha1 = "1165c908aa8dcde5278efc6609135db50d211adc"
 uuid = "72c71f33-b9b6-44de-8c94-c961784809e2"
 version = "0.3.9"
+
+[[deps.XMLExample]]
+deps = ["AnotherParser", "Pkg", "StringEncodings", "ZipArchives"]
+path = "."
+uuid = "bc3a10ed-ff8e-485c-874a-5c3ef0e3a543"
+version = "0.1.0-dev"
 
 [[deps.ZipArchives]]
 deps = ["ArgCheck", "CodecInflate64", "CodecZlib", "InputBuffers", "PrecompileTools", "TranscodingStreams", "Zlib_jll"]
