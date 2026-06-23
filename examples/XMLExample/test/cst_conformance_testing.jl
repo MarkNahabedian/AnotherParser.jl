@@ -1,10 +1,6 @@
 
-# Where was the conformance test suite from
-# https://www.w3.org/XML/Test/xmlts20130923.zip downloaded?
-XML_CONFORMANCE_TEST_ROOT = "/Users/MarkNahabedian/Downloads/xmlconf"
-
 function run_conformance_tests()
-    valid_sa = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmltest/valid/sa")
+    valid_sa = joinpath(XML_CONFORMANCE_TEST_ROOT, "xmlconf/xmltest/valid/sa")
     file_count = 0
     parse_error_count = 0
     parse_failure_count = 0
