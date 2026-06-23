@@ -220,7 +220,9 @@ include("../examples/BNF/test_bnf_grammar.jl")
 
 include("../examples/Arithmetic/test_arithmetic_grammar.jl")
 
-include("../examples/XML/includes.jl")
-include("../examples/XML/JuliaComputing_XML_factory.jl")
-include("../examples/XML/test_xml_grammar.jl")
+using Pkg
+Pkg.add(; path="../examples/XMLExample")
+Pkg.test("XMLExample")
+
+
 
