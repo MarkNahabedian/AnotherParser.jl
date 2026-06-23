@@ -177,9 +177,10 @@ Until I write more documentation, see the example grammars in the
 
 
 Additional examples are available in the `./examples` directory.  This
-includes an a grammar for parsing SemVer semantic version number
-format and a grammar for BNF as specified on the 
-[`Wikipedia BNF page`](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
+includes a grammar for parsing SemVer semantic version number format,
+a grammar for BNF as specified on the [`Wikipedia BNF
+page`](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form), and
+the full W3C XML grammar.
 
 
 ## Debugging
