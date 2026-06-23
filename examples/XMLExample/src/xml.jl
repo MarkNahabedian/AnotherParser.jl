@@ -3,7 +3,7 @@
 
 using OrderedCollections: OrderedDict
 
-BNFGrammar(:XML)
+const XMLGrammar = BNFGrammar(:XML)
 
 function unquote_xml_attribute(str::AbstractString)
     if str[1] in ['"', '\'']
