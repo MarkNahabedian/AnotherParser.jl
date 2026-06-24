@@ -46,10 +46,10 @@ The `context` argument is passed to constructor functions
 is otherwise unused.
 """
 recognize(n::BNFNode, input::AbstractString;
-                                 index=1, finish=lastindex(input),
-                                 parser=Parser(),
-                                 context=nothing) =
-    recognize(parser, n, input, index, finish, context)
+          index=1, finish=lastindex(input),
+          parser=Parser(),
+          context=nothing) =
+              recognize(parser, n, input, index, finish, context)
 
 
 # True if input[index] would get out of bounds error.
@@ -71,8 +71,8 @@ end
 pretty(::EndOfInput) = "EndOfInput()"
 
 function recognize(p::Parser, n::EndOfInput,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     return exhausted(input, index, finish), nothing, index
 end
 
@@ -88,8 +88,8 @@ end
 pretty(::Empty) = "Empty()"
 
 function recognize(p::Parser, n::Empty,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     return true, nothing, index
 end
 
@@ -114,8 +114,8 @@ is_left_recursive(node::Sequence, grammar::Symbol, name::AbstractString) =
     is_left_recursive(first(node.elements), grammar, name)
 
 function recognize(p::Parser, n::Sequence,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     collected = []
     in = index
     for n1 in n.elements
@@ -150,8 +150,8 @@ is_left_recursive(node::Alternatives, grammar::Symbol, name::AbstractString) =
     any(n -> is_left_recursive(n, grammar, name), node.alternatives)
 
 function recognize(p::Parser, n::Alternatives,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     # Greedy match: choose the alternative that consumes the most
     # input.
     alts_matched = false
@@ -200,8 +200,8 @@ is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.node, grammar, name)
 
 function recognize(p::Parser, n::Repeat,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     result = []
     in = index
     while true
@@ -245,8 +245,8 @@ pretty(n::CharacterLiteral) = *("CharacterLiteral('",
                                 "')")
 
 function recognize(p::Parser, n::CharacterLiteral,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     if exhausted(input, index, finish)
         return false, nothing, index
     end
@@ -276,8 +276,8 @@ pretty(n::CharacterInSet) = *("CharacterInSet([",
                                 "])")
 
 function recognize(p::Parser, n::CharacterInSet,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     if exhausted(input, index, finish)
         return false, nothing, index
     end
@@ -303,8 +303,8 @@ pretty(n::CharacterSatisfiesPredicate) = *("CharacterSatisfiesPredicate(",
                                            ")")
 
 function recognize(p::Parser, n::CharacterSatisfiesPredicate,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     c = input[index]
     if n.predicate(c)
         return true, c, nextind(input, index, 1)
@@ -327,8 +327,8 @@ pretty(n::StringLiteral) = *("StringLiteral(\"",
                              "\")")
 
 function recognize(p::Parser, n::StringLiteral,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     if length(n.str) == 0
         return true, n.str, index
     end
@@ -350,7 +350,7 @@ end
 """
     RegexNode <: BNFNode(re::Regex)
 
-Match the specified regular expression."
+Match the specified regular expression.
 So that the parser can access captures, The second return value
 of `recognize` is the RegexMatch object returned by `match`.
 """
@@ -363,8 +363,8 @@ pretty(n::RegexNode) = *("RegexNode(",
                          ")")
 
 function recognize(p::Parser, n::RegexNode,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     m = match(n.re, input, index)
     if m == nothing
         return false, nothing, index
@@ -406,8 +406,8 @@ function loggingReductions(f, log=true)
 end
 
 function recognize(p::Parser, n::Constructor,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     matched, v, i = recognize1(p, n.node, input, index, finish, context)
     if !matched
         return false, v, i
@@ -518,8 +518,8 @@ is_left_recursive(node::DerivationRule, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.lhs, grammar, name)
 
 function recognize(p::Parser, n::DerivationRule,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     matched, v, i = recognize1(p, n.lhs, input, index, finish, context)
     if !matched
         return false, v, i
@@ -581,8 +581,8 @@ is_left_recursive(node::BNFRef, grammar::Symbol, name::AbstractString) =
     node.grammar_name == grammar && node.name == name
 
 function recognize(p::Parser, n::BNFRef,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     recognize1(p, n.target, input, index, finish, context)
 end
 
@@ -605,8 +605,8 @@ is_left_recursive(node::Excluding, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.match, grammar, name)
 
 function recognize(p::Parser, n::Excluding,
-                                          input::AbstractString, index::Int, finish::Int,
-                                          context::Any)
+                   input::AbstractString, index::Int, finish::Int,
+                   context::Any)
     matched, v, i = recognize1(p, n.exclude, input, index, finish, context)
     if matched
         return false, nothing, i
