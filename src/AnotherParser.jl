@@ -21,6 +21,4 @@ include("debug_parser.jl");
 include("check_references.jl")
 include("pprint.jl")
 
-include("../examples/BNF/includes.jl")
-
 end
