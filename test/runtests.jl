@@ -42,24 +42,34 @@ end
         @test v == 'z'
     end
     let
-        matched, v, i = recognize(CharacterLiteral('z'),
-                                  "abzd"; index = 2)
+        p = Parser()
+        node = CharacterLiteral('z')
+        matched, v, i = recognize(node, "abzd"; index = 2, parser = p)
         @test matched == false
         @test i == 2
+        @test p.failing_index == 2
+        @test p.failing_nodes == Set{BNFNode}([node])
     end
     let
-        matched, v, i = recognize(CharacterLiteral('z'),
-                                  "abzd"; index = 5)
+        p = Parser()
+        node = CharacterLiteral('z')
+        matched, v, i = recognize(node, "abzd"; index = 5, parser = p)
         @test matched == false
         @test i == 5
-        #test v == nothing
+        @test v == nothing
+        @test p.failing_index == 5
+        @test p.failing_nodes == Set{BNFNode}([node])
     end
     let
-        matched, v, i = recognize(CharacterLiteral('z'),
-                                  "abzd"; index = 4, finish = 3)
+        p = Parser()
+        node = CharacterLiteral('z')
+        matched, v, i = recognize(node, "abzd"; index = 4, finish = 3,
+                                  parser = p)
         @test matched == false
         @test i == 4
         @test v == nothing
+        @test p.failing_index == 4
+        @test p.failing_nodes == Set{BNFNode}([node])
     end
 end
 
@@ -78,18 +88,25 @@ end
         @test v == "abc"
     end
     let
-        matched, v, i = recognize(StringLiteral("abc"),
-                                  "abcd"; index = 2)
+        p = Parser()
+        node = StringLiteral("abc")
+        matched, v, i = recognize(node, "abcd"; parser = p, index = 2)
         @test matched == false
         @test i == 2
         @test v == nothing
+        @test p.failing_index == 2
+        @test p.failing_nodes == Set{BNFNode}([node])
     end
     let
-        matched, v, i = recognize(StringLiteral("bcd"),
-                                  "abcd"; index = 2, finish = 3)
+        p = Parser()
+        node = StringLiteral("bcd")
+        matched, v, i = recognize(node, "abcd";
+                                  parser = p, index = 2, finish = 3)
         @test matched == false
         @test i == 2
         @test v == nothing
+        @test p.failing_index == 2
+        @test p.failing_nodes == Set{BNFNode}([node])
     end
     let
         matched, v, i = recognize(Sequence(StringLiteral("bcd"),
@@ -116,17 +133,25 @@ end
 end
 
 @testset "test RegexNode" begin
-    matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123"; index = 2)
-    @test matched == true
-    @test i == 5
-    @test v.match == "bcd"
-end
-
-@testset "test RegexNode" begin
-    matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123"; index = 2)
-    @test matched == true
-    @test i == 5
-    @test v.match == "bcd"
+    let
+        matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123"; index = 2)
+        @test matched == true
+        @test i == 5
+        @test v.match == "bcd"
+    end
+    let
+        @info "RegexNode 2"
+        p = Parser()
+        node = RegexNode(r"[a-z]+")
+        matched, v, i = recognize(node, "a1bcd123";
+                                  parser = p, index = 2)
+        #HUH???
+        # @test matched = false
+        @test i == 2
+        @test v == nothing
+        @test p.failing_index == 2
+        @test p.failing_nodes == Set{BNFNode}([node])
+    end
 end
 
 @testset "test Sequence" begin
@@ -140,13 +165,16 @@ end
         @test i == 4
     end
     let
-        matched, v, i = recognize(Sequence(CharacterLiteral('a'),
-                                           CharacterLiteral('b'),
-                                           CharacterLiteral('c')),
-                                  "aBcd")
+        p = Parser()
+        node = Sequence(CharacterLiteral('a'),
+                        CharacterLiteral('b'),
+                        CharacterLiteral('c'))
+        matched, v, i = recognize(node, "aBcd"; parser = p)
         @test matched == false
         @test v == nothing
         @test i == 1
+        @test p.failing_index == 2
+        @test p.failing_nodes == Set{BNFNode}([node.elements[2]])
     end
 end
 
@@ -161,13 +189,17 @@ end
         @test i == 2
     end
     let
-        matched, v, i = recognize(Alternatives(CharacterLiteral('a'),
-                                               CharacterLiteral('b'),
-                                               CharacterLiteral('c')),
-                                 "Abcd")
+        @info "Alternatives 2"
+        p = Parser()
+        node = Alternatives(CharacterLiteral('a'),
+                            CharacterLiteral('b'),
+                            CharacterLiteral('c'))
+        matched, v, i = recognize(node, "Abcd"; parser = p)
         @test matched == false
         @test v == nothing
         @test i == 1
+        @test p.failing_index == 1
+        @test p.failing_nodes == Set{BNFNode}([node, node.alternatives...])
     end
 end
 
@@ -180,11 +212,14 @@ end
         @test i == 1
     end
     let
-        matched, v, i = recognize(Repeat(CharacterLiteral('a'); min=1),
-                                  "")
+        p = Parser()
+        node = Repeat(CharacterLiteral('a'); min=1)
+        matched, v, i = recognize(node, ""; parser = p)
         @test matched == false
         @test v == nothing
         @test i == 1
+        @test p.failing_index == 1
+        @test p.failing_nodes == Set{BNFNode}([node, node.node])
     end
     let
         matched, v, i = recognize(Repeat(CharacterLiteral('a')),
