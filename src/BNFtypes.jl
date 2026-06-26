@@ -240,6 +240,10 @@ end
     CharacterLiteral(c)
 
 Matches the single character `c`.
+
+For efficiency ans simplicity, consider using [`CharacterInSet`](@ref)
+or [`CharacterSatisfiesPredicate`](@ref) instead of
+`Alternatives(CharacterLiteral(...), CharacterLiteral(...), ...)`.
 """
 @bnfnode struct CharacterLiteral <: BNFNode
     character::Char
