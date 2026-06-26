@@ -4,14 +4,15 @@
 #   https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form
 
 BootstrapBNFGrammar = BNFGrammar(:BootstrapBNFGrammar)
+BNF_GRAMMAR = BNFGrammar(:BNF)
 
 bnf"""
  <syntax>         ::= <rule> | <rule> <syntax>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<syntax>",
-               @Alternatives(BNFRef(BootstrapBNFGrammar, "<rule>"),
-                             Sequence(BNFRef(BootstrapBNFGrammar, "<rule>"),
-                                      BNFRef(BootstrapBNFGrammar, "<syntax>")))
+DerivationRule(:BootstrapBNFGrammar, "<syntax>",
+               @Alternatives(BNFRef(:BootstrapBNFGrammar, "<rule>"),
+                             Sequence(BNFRef(:BootstrapBNFGrammar, "<rule>"),
+                                      BNFRef(:BootstrapBNFGrammar, "<syntax>")))
 
                ).constructor =
                    # We return the DerivationRules, but they've
@@ -29,16 +30,16 @@ DerivationRule(BootstrapBNFGrammar, "<syntax>",
 bnf"""
  <rule>           ::= <opt-whitespace> "<" <rule-name> ">" <opt-whitespace> "::=" <opt-whitespace> <expression> <line-end>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<rule>",
-               Sequence(BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
+DerivationRule(:BootstrapBNFGrammar, "<rule>",
+               Sequence(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
                         CharacterLiteral('<'),
-                        BNFRef(BootstrapBNFGrammar, "<rule-name>"),
+                        BNFRef(:BootstrapBNFGrammar, "<rule-name>"),
                         CharacterLiteral('>'),
-                        BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
+                        BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
                         StringLiteral("::="),
-                        BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                        BNFRef(BootstrapBNFGrammar, "<expression>"),
-                        BNFRef(BootstrapBNFGrammar, "<line-end>"))
+                        BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+                        BNFRef(:BootstrapBNFGrammar, "<expression>"),
+                        BNFRef(:BootstrapBNFGrammar, "<line-end>"))
                ).constructor = function (grammar_name, input::AbstractString,
                                          from::Int, to::Int, elts)
                    rule_name = join(elts[2:4])
@@ -49,10 +50,10 @@ DerivationRule(BootstrapBNFGrammar, "<rule>",
 bnf"""
  <opt-whitespace> ::= " " <opt-whitespace> | ""
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<opt-whitespace>",
+DerivationRule(:BootstrapBNFGrammar, "<opt-whitespace>",
                Alternatives(
                    Sequence(CharacterLiteral(' '),
-                            BNFRef(BootstrapBNFGrammar, "<opt-whitespace>")),
+                            BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>")),
                    StringLiteral(""))
                ).constructor =
                    function (grammar_name, input::AbstractString,
@@ -64,14 +65,14 @@ DerivationRule(BootstrapBNFGrammar, "<opt-whitespace>",
 bnf"""
  <expression>     ::= <list> | <list> <opt-whitespace> "|" <opt-whitespace> <expression>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<expression>",
+DerivationRule(:BootstrapBNFGrammar, "<expression>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<list>"),
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<list>"),
-                            BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
+                   BNFRef(:BootstrapBNFGrammar, "<list>"),
+                   Sequence(BNFRef(:BootstrapBNFGrammar, "<list>"),
+                            BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
                             CharacterLiteral('|'),
-                            BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                            BNFRef(BootstrapBNFGrammar, "<expression>"))
+                            BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+                            BNFRef(:BootstrapBNFGrammar, "<expression>"))
                )).constructor =
                    function (grammar_name, input::AbstractString,
                              from::Int, to::Int, elts)
@@ -99,24 +100,24 @@ bnf"""
  <line-end1>       ::= <opt-whitespace> <EOL>
  <line-end>        ::= <line-end1> | <line-end1> <line-end>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<line-end1>",
-               Sequence(BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                        BNFRef(BootstrapBNFGrammar, "<EOL>")))
-DerivationRule(BootstrapBNFGrammar, "<line-end>",
+DerivationRule(:BootstrapBNFGrammar, "<line-end1>",
+               Sequence(BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+                        BNFRef(:BootstrapBNFGrammar, "<EOL>")))
+DerivationRule(:BootstrapBNFGrammar, "<line-end>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<line-end1>"),
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<line-end1>"),
-                            BNFRef(BootstrapBNFGrammar, "<line-end>"))))
+                   BNFRef(:BootstrapBNFGrammar, "<line-end1>"),
+                   Sequence(BNFRef(:BootstrapBNFGrammar, "<line-end1>"),
+                            BNFRef(:BootstrapBNFGrammar, "<line-end>"))))
 
 bnf"""
  <list>           ::= <term> | <term> <opt-whitespace> <list>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<list>",
+DerivationRule(:BootstrapBNFGrammar, "<list>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<term>"),
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<term>"),
-                            BNFRef(BootstrapBNFGrammar, "<opt-whitespace>"),
-                            BNFRef(BootstrapBNFGrammar, "<list>"),))
+                   BNFRef(:BootstrapBNFGrammar, "<term>"),
+                   Sequence(BNFRef(:BootstrapBNFGrammar, "<term>"),
+                            BNFRef(:BootstrapBNFGrammar, "<opt-whitespace>"),
+                            BNFRef(:BootstrapBNFGrammar, "<list>"),))
                ).constructor =
                    function (context, input::AbstractString, from::Int, to::Int, elts)
                        if elts isa BNFNode
@@ -134,11 +135,11 @@ DerivationRule(BootstrapBNFGrammar, "<list>",
 bnf"""
  <term>           ::= <literal> | "<" <rule-name> ">"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<term>",
+DerivationRule(:BootstrapBNFGrammar, "<term>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<literal>"),
+                   BNFRef(:BootstrapBNFGrammar, "<literal>"),
                    Sequence(CharacterLiteral('<'),
-                            BNFRef(BootstrapBNFGrammar, "<rule-name>"),
+                            BNFRef(:BootstrapBNFGrammar, "<rule-name>"),
                             CharacterLiteral('>')))
                        ).constructor =
                            function (grammar_name, input::AbstractString,
@@ -154,16 +155,16 @@ bnf"""
 """BNF
 # A double quoted string can contain single quotes.
 # A single quoted string can contain double quotes.
-DerivationRule(BootstrapBNFGrammar, "<literal>",
+DerivationRule(:BootstrapBNFGrammar, "<literal>",
                Alternatives(
                    Sequence(
                        CharacterLiteral('"'),
-                       Constructor(BNFRef(BootstrapBNFGrammar, "<text1>"),
+                       Constructor(BNFRef(:BootstrapBNFGrammar, "<text1>"),
                                   substring_constructor_function),
                        CharacterLiteral('"')),
                    Sequence(
                        CharacterLiteral('\''),
-                       Constructor(BNFRef(BootstrapBNFGrammar, "<text2>"),
+                       Constructor(BNFRef(:BootstrapBNFGrammar, "<text2>"),
                                    substring_constructor_function),
                        CharacterLiteral('\'')))
                ).constructor =
@@ -177,42 +178,42 @@ DerivationRule(BootstrapBNFGrammar, "<literal>",
 bnf"""
  <text1>          ::= "" | <character1> <text1>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<text1>",
+DerivationRule(:BootstrapBNFGrammar, "<text1>",
                Alternatives(
                    StringLiteral(""),
                    Sequence(
-                       BNFRef(BootstrapBNFGrammar, "<character1>"),
-                       BNFRef(BootstrapBNFGrammar, "<text1>"))))
+                       BNFRef(:BootstrapBNFGrammar, "<character1>"),
+                       BNFRef(:BootstrapBNFGrammar, "<text1>"))))
 
 bnf"""
  <text2>          ::= '' | <character2> <text2>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<text2>",
+DerivationRule(:BootstrapBNFGrammar, "<text2>",
                Alternatives(
                    StringLiteral(""),
                    Sequence(
-                       BNFRef(BootstrapBNFGrammar, "<character2>"),
-                       BNFRef(BootstrapBNFGrammar, "<text2>"))))
+                       BNFRef(:BootstrapBNFGrammar, "<character2>"),
+                       BNFRef(:BootstrapBNFGrammar, "<text2>"))))
 
 bnf"""
  <character>      ::= <letter> | <digit> | <symbol>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<character>",
+DerivationRule(:BootstrapBNFGrammar, "<character>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<letter>"),
-                   BNFRef(BootstrapBNFGrammar, "<digit>"),
-                   BNFRef(BootstrapBNFGrammar, "<symbol>")))
+                   BNFRef(:BootstrapBNFGrammar, "<letter>"),
+                   BNFRef(:BootstrapBNFGrammar, "<digit>"),
+                   BNFRef(:BootstrapBNFGrammar, "<symbol>")))
 
 bnf"""
  <letter>         ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<letter>",
+DerivationRule(:BootstrapBNFGrammar, "<letter>",
                Alternatives(
                    [CharacterLiteral(c) for c in 'A':'Z']...,
                    [CharacterLiteral(c) for c in 'a':'z']...))
 #=
 # Less noisy tracing:
-DerivationRule(BootstrapBNFGrammar, "<letter>",
+DerivationRule(:BootstrapBNFGrammar, "<letter>",
                RegexNode(r"[a-zA-Z]")).constructor =
                    function (grammar_name, input::AbstractString,
                              from::Int, to::Int, m::RegexMatch)
@@ -224,12 +225,12 @@ DerivationRule(BootstrapBNFGrammar, "<letter>",
 bnf"""
  <digit>          ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<digit>",
+DerivationRule(:BootstrapBNFGrammar, "<digit>",
                Alternatives(
                    [CharacterLiteral(c) for c in '0':'9']...))
 #=
 # Less noisy tracing:
-DerivationRule(BootstrapBNFGrammar, "<digit>",
+DerivationRule(:BootstrapBNFGrammar, "<digit>",
                RegexNode(r"[0-9]")).constructor =
                    function (grammar_name, input::AbstractString,
                              from::Int, to::Int, m::RegexMatch)
@@ -241,7 +242,7 @@ DerivationRule(BootstrapBNFGrammar, "<digit>",
 bnf"""
  <symbol>         ::=  "|" | " " | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "\" | "]" | "^" | "_" | "`" | "{" | "}" | "~"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<symbol>",
+DerivationRule(:BootstrapBNFGrammar, "<symbol>",
                Alternatives(
                    CharacterLiteral('|'),
                    CharacterLiteral(' '),
@@ -275,7 +276,7 @@ DerivationRule(BootstrapBNFGrammar, "<symbol>",
                    CharacterLiteral('}'),
                    CharacterLiteral('~'),))
 #=# Less noisy tracing:
-DerivationRule(BootstrapBNFGrammar, "<symbol>",
+DerivationRule(:BootstrapBNFGrammar, "<symbol>",
                RegexNode(r"[| !#$%&()*+,-./:;>=<?@\[\\\]^_`{}~]")).constructor = 
                    function (grammar_name, input::AbstractString,
                              from::Int, to::Int, m::RegexMatch)
@@ -287,17 +288,17 @@ DerivationRule(BootstrapBNFGrammar, "<symbol>",
 bnf"""
  <character1>     ::= <character> | "'"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<character1>",
+DerivationRule(:BootstrapBNFGrammar, "<character1>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<character>"),
+                   BNFRef(:BootstrapBNFGrammar, "<character>"),
                    CharacterLiteral('\'')))
 
 bnf"""
  <character2>     ::= <character> | '"'
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<character2>",
+DerivationRule(:BootstrapBNFGrammar, "<character2>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<character>"),
+                   BNFRef(:BootstrapBNFGrammar, "<character>"),
                    CharacterLiteral('"')))
 
 #=
@@ -305,12 +306,12 @@ DerivationRule(BootstrapBNFGrammar, "<character2>",
 bnf"""
  <rule-name>      ::= <letter> | <rule-name> <rule-char>
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<rule-name>",
+DerivationRule(:BootstrapBNFGrammar, "<rule-name>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<letter>"),
+                   BNFRef(:BootstrapBNFGrammar, "<letter>"),
                    Sequence(
-                       BNFRef(BootstrapBNFGrammar, "<rule-name>"),
-                       BNFRef(BootstrapBNFGrammar, "<rule-char>"))))
+                       BNFRef(:BootstrapBNFGrammar, "<rule-name>"),
+                       BNFRef(:BootstrapBNFGrammar, "<rule-char>"))))
 =#
 bnf"""
  <rule-name>      ::= <letter> | <letter> <rule-name2>
@@ -318,30 +319,30 @@ bnf"""
 """BNF
 # I believe the intent is that a <rule-name> must begin with a letter,
 # followed by any number of <rule-char>s.
-DerivationRule(BootstrapBNFGrammar, "<rule-name>",
+DerivationRule(:BootstrapBNFGrammar, "<rule-name>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<letter>"),
+                   BNFRef(:BootstrapBNFGrammar, "<letter>"),
                    Sequence(
-                       BNFRef(BootstrapBNFGrammar, "<letter>"),
-                       BNFRef(BootstrapBNFGrammar, "<rule-name2>")))
+                       BNFRef(:BootstrapBNFGrammar, "<letter>"),
+                       BNFRef(:BootstrapBNFGrammar, "<rule-name2>")))
                ).constructor = function(grammar_name, input::AbstractString,
                                         from::Int, to::Int, v)
                    SubString(input, from, to)
                end
                        
-DerivationRule(BootstrapBNFGrammar, "<rule-name2>",
+DerivationRule(:BootstrapBNFGrammar, "<rule-name2>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<rule-char>"),
-                   Sequence(BNFRef(BootstrapBNFGrammar, "<rule-char>"),
-                            BNFRef(BootstrapBNFGrammar, "<rule-name2>"))))
+                   BNFRef(:BootstrapBNFGrammar, "<rule-char>"),
+                   Sequence(BNFRef(:BootstrapBNFGrammar, "<rule-char>"),
+                            BNFRef(:BootstrapBNFGrammar, "<rule-name2>"))))
 
 bnf"""
  <rule-char>      ::= <letter> | <digit> | "-"
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<rule-char>",
+DerivationRule(:BootstrapBNFGrammar, "<rule-char>",
                Alternatives(
-                   BNFRef(BootstrapBNFGrammar, "<letter>"),
-                   BNFRef(BootstrapBNFGrammar, "<digit>"),
+                   BNFRef(:BootstrapBNFGrammar, "<letter>"),
+                   BNFRef(:BootstrapBNFGrammar, "<digit>"),
                    CharacterLiteral('-')))
 
 
@@ -349,11 +350,21 @@ DerivationRule(BootstrapBNFGrammar, "<rule-char>",
 bnf"""
  <EOL>   ::= '\n'
 """BNF
-DerivationRule(BootstrapBNFGrammar, "<EOL>",
+DerivationRule(:BootstrapBNFGrammar, "<EOL>",
                CharacterLiteral('\n'))
 
 
-@assert !check_references(BootstrapBNFGrammar)
+@assert !check_references(AllGrammars[:BootstrapBNFGrammar])
+
+function __init__()
+    # When Julia precompiles a module, it does not capture changes
+    # made to other modules, so the grammar definition is lost.  This
+    # makes sure the grammar is preserved t=when this module is
+    # loaded.
+    AllGrammars[BootstrapBNFGrammar.name] = BootstrapBNFGrammar
+    AllGrammars[BNF_GRAMMAR.name] = BNF_GRAMMAR
+end
+
 
 which_BNF_grammar = :BootstrapBNFGrammar
 
@@ -385,5 +396,6 @@ end
 
 bootstrap_bnf()
 
-check_references(:BootstrapBNFGrammar)
-check_references(:BNF)
+@assert !check_references(:BootstrapBNFGrammar)
+@assert !check_references(:BNF)
+

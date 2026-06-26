@@ -1,6 +1,7 @@
 # An example grammar for arithmetic expressions.
 
 using AnotherParser
+using BNFExample
 
 delete!(AllGrammars, :LeftRecursiveArithmeticGrammar)
 

@@ -249,13 +249,15 @@ include("test_note_BNFNode_location.jl")
 
 # Test example grammars:
 
+using Pkg
+
 include("../examples/SemVer/test_SemVerBNF.jl")
 
-include("../examples/BNF/test_bnf_grammar.jl")
+Pkg.develop(path="../examples/BNFExample")
+Pkg.test("BNFExample")
 
 include("../examples/Arithmetic/test_arithmetic_grammar.jl")
 
-using Pkg
 Pkg.develop(path="../examples/XMLExample")
 Pkg.test("XMLExample")
 
