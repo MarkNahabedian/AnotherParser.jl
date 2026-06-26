@@ -73,6 +73,46 @@ end
     end
 end
 
+@testset "test CharacterInSet" begin
+    let
+        matched, v, i = recognize(CharacterInSet(['a', 'y', 'z']),
+                                  "abzd")
+        @test matched == true
+        @test i == 2
+        @test v == 'a'
+    end
+    let
+        p = Parser()
+        node = CharacterInSet(['a', 'b', 'c'])
+        matched, v, i = recognize(node, "zbcd"; parser = p)
+        @test matched == false
+        @test i == 1
+        @test v == nothing
+        @test p.failing_index == 1
+        @test p.failing_nodes == Set{BNFNode}([node])
+    end
+end
+
+@testset "test CharacterSatisfiesPredicate" begin
+    predicate = c -> c in "abc"
+    node = CharacterSatisfiesPredicate(predicate)
+    let
+        matched, v, i = recognize(node, "abcd")
+        @test matched == true
+        @test i == 2
+        @test v == 'a'        
+    end
+    let
+        p = Parser()
+        matched, v, i = recognize(node, "zbcd"; parser = p)
+        @test matched == false
+        @test i == 1
+        @test v == nothing
+        @test p.failing_index == 1
+        @test p.failing_nodes == Set{BNFNode}([node])
+    end
+end
+
 @testset "test StringLiteral" begin
     let
         matched, v, i = recognize(StringLiteral(""), "abcd")
@@ -243,6 +283,19 @@ end
         @test i == 3
     end
 end
+
+
+#=
+Not yet tested above:
+
+ BNFRef
+ Constructor
+ DerivationRule
+ Empty
+ Excluding
+
+=#
+
 
 include("test_note_BNFNode_location.jl")
 
