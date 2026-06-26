@@ -1,5 +1,7 @@
 TODO:
 
+When constructing BNFNode names, don't include package prefix.
+
 A way to have recognize report at what index it failed to match what
 expression.
 
