@@ -10,7 +10,7 @@ AnotherParser allows one to implement a recursive descent parser given
 a hierarchical grammar expressed as
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
-ISO EBNF is not yet supported.
+Neither ISO EBNF nor W3C EBNF are currently supported.
 
 
 ## Grammars
@@ -43,13 +43,13 @@ performs the actual parsing:
 
 ```@docs
 recognize
+recognize1
 ```
 
 
 ## Utility Functions
 
 ```@docs
-@bnf_str
 show_grammar
 check_references
 pretty
@@ -75,7 +75,7 @@ expression to massage the value that it returns.
 
 Also, `DerivationRule` can be assigned a `constructor` property.
 
-Various functions are provided to serve as constructors:
+Various functions are provided to serve as constructors.
 
 
 ### Constructor Functions
@@ -93,13 +93,15 @@ arguments:
 
 * the entire input string;
 
-* the start index into that input string string of the portion
-  currently recognized;
+* the start index into that input string of the portion currently
+  recognized;
 
-* the index of the first character in the input after the recognized
-  item;
+* the index of the last character to have been matched (so that a
+  constructtor could just call `SubString`);
 
-* the subordinate fragments that were just parsed.
+* the subordinate fragments (values) that were just parsed.
+
+For convenience, some constructor functions are already provided:
 
 ```@docs
 AnotherParser.identity_constructor_function
@@ -171,9 +173,6 @@ recognize(AllGrammars[:example]["text"],
 ```
 
 There is much room for simplification and syntactic sugar.
-
-Until I write more documentation, see the example grammars in the
-`examples` directory.
 
 
 Additional examples are available in the `./examples` directory.  This
