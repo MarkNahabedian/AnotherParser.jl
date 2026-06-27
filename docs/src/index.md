@@ -43,7 +43,6 @@ performs the actual parsing:
 
 ```@docs
 recognize
-recognize1
 ```
 
 
