@@ -181,6 +181,77 @@ page`](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form), and
 the full W3C XML grammar.
 
 
+### BNF Grammar EXample
+
+There are two grammars for parsing BNF syntax itself: a hand coded
+grammar and pne that is built dorectly form the BNF definition of BNF
+syntax.  The forner is used to bootstrap the latter.
+
+```
+Pkg.add(; path="./examples/BNFExample")
+using BNFExample
+```
+
+
+### Arithmetic Example
+
+The arithmetic example rovides a minimal grammar for arithmetic
+expressions.  It is expressed as a BNF grammar.
+
+```
+include("examples/Arithmetic/arithmetic.jl")
+
+recognize(BNFRef(:ExampleArithmeticGrammar, "<expr>"), "2+3*5")
+(true, :(2 + 3 * 5), 6)
+```
+
+
+### XML Grammar
+
+This grammar parses XML text into a concrete syntax tree.
+
+```
+Pkg.develop(path="./examples/XMLExample")
+using XMLExample
+
+# Running the unit tests for XMLExample will fetch these test files:
+xml = read("./examples/XMLExample/test/w3c_tests/xmlconf/xmltest/valid/sa/001.xml", String)
+recognize(BNFRef(:XML, "document"), xml)
+# Result was reindented for readability:
+(true,
+ CSTDocument(
+     CSTProlog(CSTXMLDecl[],
+               Any[],
+               Any[
+                   Any[
+                       CSTDocTypeDecl(
+                           CSTWhitespace(" ", false),
+                           CSTName("doc", nothing),
+                           Any[],
+                           Any[
+                               CSTWhitespace(" ", false)],
+                           Any[CSTWhitespace("\r\n", false),
+                               CSTElementDecl(
+                                   CSTWhitespace(" ", false),
+                                   CSTName("doc", nothing),
+                                   CSTWhitespace(" ", false),
+                                   "(#PCDATA)",
+                                   CSTWhitespace("", false)),
+                               CSTWhitespace("\r\n", false)],
+                           CSTWhitespace("", false)),
+                       Any[CSTWhitespace("\r\n", true)]]]),
+     CSTElement(
+         CSTName("doc", nothing),
+         CSTAttribute[],
+         CSTWhitespace[],
+         Union{CSTNode,
+               CSTAttValueFragment}[],
+         CSTWhitespace[], false),
+     Any[CSTWhitespace("\r\n", true)]),
+ 61)
+```
+
+
 ## Debugging
 
 ```@docs
