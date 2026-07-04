@@ -14,7 +14,7 @@ ensure_w3c_test_files()
              "xmlconf/xmltest/valid/sa/*.xml"))
     xmltext = read_decoded(xml)
     matched, v, i = recognize(AllGrammars[:XML]["document"], xmltext)
-    @test matched
+    @test matched == true
     serialized = string(v)
     @test xmltext == serialized
 end
