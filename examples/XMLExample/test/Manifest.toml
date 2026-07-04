@@ -2,10 +2,10 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "7b7882b7dd1059465894bfc6982d47eb20a7da4e"
+project_hash = "d413e1562bee266153761c2002f651d2ae775cf8"
 
 [[deps.AnotherParser]]
-deps = ["DataStructures", "Logging", "MacroTools", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "PropertyMethods", "Test", "XML"]
+deps = ["BNFExample", "DataStructures", "Logging", "MacroTools", "OrderedCollections", "Parameters", "PrettyPrint", "Printf", "PropertyMethods", "Test", "XML", "XMLExample"]
 path = "../../.."
 uuid = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 version = "0.1.0-dev"
@@ -22,6 +22,12 @@ version = "1.1.2"
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
+
+[[deps.BNFExample]]
+deps = ["AnotherParser", "Logging", "Test"]
+path = "../../BNFExample"
+uuid = "f6629463-5d80-42cd-8ca6-de62f11578cf"
+version = "0.1.0-dev"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -71,6 +77,11 @@ version = "1.6.0"
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 version = "1.11.0"
+
+[[deps.Glob]]
+git-tree-sha1 = "246c628cec062230b7d183aab88841fa94fcabe9"
+uuid = "c27321d9-0574-5035-807b-f59d2c89b15c"
+version = "1.5.0"
 
 [[deps.InputBuffers]]
 git-tree-sha1 = "e5392ea00942566b631e991dd896942189937b2f"

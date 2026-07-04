@@ -1,5 +1,7 @@
 [deps]
 AnotherParser = "2ebba909-c633-4b8c-b8fe-948aaf993ef9"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XMLExample = "bc3a10ed-ff8e-485c-874a-5c3ef0e3a543"
 ZipArchives = "49080126-0e18-4c2a-b176-c102e4b3760c"
