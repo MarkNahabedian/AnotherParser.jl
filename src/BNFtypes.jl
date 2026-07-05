@@ -11,6 +11,19 @@ using PropertyMethods
 
 trace_recognize = false
 
+logReductions = false
+
+function loggingReductions(f, log=true)
+    global logReductions
+    previous = logReductions
+    try
+        logReductions = true
+        f()
+    finally
+        logReductions = previous
+    end
+end
+
 
 """
     pretty(::BNFNode)
@@ -31,6 +44,16 @@ Returns true is `node` is left recursive with respect to the
 function is_left_recursive end
 
 is_left_recursive(::BNFNode, ::Symbol, ::AbstractString) = false
+
+
+"""
+    walk_nodes(f, node)
+
+Applies `f` to each node in the node tree that descends from `node`.
+"""
+function walk_nodes(f, node::BNFNode)
+    f(node)
+end
 
 
 """
@@ -115,6 +138,13 @@ pretty(n::Sequence) = *("Sequence(",
 is_left_recursive(node::Sequence, grammar::Symbol, name::AbstractString) =
     is_left_recursive(first(node.elements), grammar, name)
 
+function walk_nodes(f, node::Sequence)
+    f(node)
+    for e in node.elements
+        walk_nodes(f, e)
+    end
+end
+
 function recognize(p::Parser, n::Sequence,
                    input::AbstractString, index::Int, finish::Int,
                    context::Any)
@@ -151,6 +181,13 @@ pretty(n::Alternatives) = *("Alternatives(",
 
 is_left_recursive(node::Alternatives, grammar::Symbol, name::AbstractString) =
     any(n -> is_left_recursive(n, grammar, name), node.alternatives)
+
+function walk_nodes(f, node::Alternatives)
+    f(node)
+    for alt in node.alternatives
+        walk_nodes(f, alt)
+    end
+end
 
 function recognize(p::Parser, n::Alternatives,
                    input::AbstractString, index::Int, finish::Int,
@@ -202,6 +239,11 @@ pretty(n::Repeat) = *("Repeat(",
 
 is_left_recursive(node::Repeat, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.node, grammar, name)
+
+function walk_nodes(f, node::Repeat)
+    f(node)
+    walk_nodes(f, node.node)
+end
 
 function recognize(p::Parser, n::Repeat,
                    input::AbstractString, index::Int, finish::Int,
@@ -412,17 +454,9 @@ end
 
 pretty(::Constructor) = "Constructor()"
 
-logReductions = false
-
-function loggingReductions(f, log=true)
-    global logReductions
-    previous = logReductions
-    try
-        logReductions = true
-        f()
-    finally
-        logReductions = previous
-    end
+function walk_nodes(f, node::Constructor)
+    f(node)
+    walk_nodes(f, node.node)
 end
 
 function recognize(p::Parser, n::Constructor,
@@ -482,6 +516,12 @@ function is_left_recursive(node::BNFGrammar)
     false
 end
 
+function walk_nodes(f, node::BNFGrammar)
+    for d in values(node.derivations)
+        walk_nodes(f, d)
+    end
+end
+
 
 """
 A Dict of all defined grammars.
@@ -537,6 +577,11 @@ is_left_recursive(node::DerivationRule) = is_left_recursive(node, node.grammar_n
 
 is_left_recursive(node::DerivationRule, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.lhs, grammar, name)
+
+function walk_nodes(f, node::DerivationRule)
+    f(node)
+    walk_nodes(f, node.lhs)
+end
 
 function recognize(p::Parser, n::DerivationRule,
                    input::AbstractString, index::Int, finish::Int,
@@ -626,6 +671,12 @@ is_left_recursive(node::Excluding, grammar::Symbol, name::AbstractString) =
     is_left_recursive(node.exclude, grammar, name) ||
     is_left_recursive(node.match, grammar, name)
 
+function walk_nodes(f, n::Excluding)
+    f(n)
+    walk_nodes(f, n.exclude)
+    walk_nodes(f, n.match)
+end
+
 function recognize(p::Parser, n::Excluding,
                    input::AbstractString, index::Int, finish::Int,
                    context::Any)
@@ -637,50 +688,6 @@ function recognize(p::Parser, n::Excluding,
     recognize1(p, n.match, input, index, finish, context)
 end
 
-
-"""
-    walk_nodes(f, node)
-
-Applies `f` to each node in the node tree that descends from `node`.
-"""
-function walk_nodes(f, node::BNFNode)
-    f(node)
-end
-
-function walk_nodes(f, node::BNFGrammar)
-    for d in values(node.derivations)
-        walk_nodes(f, d)
-    end
-end
-
-function walk_nodes(f, node::DerivationRule)
-    f(node)
-    walk_nodes(f, node.lhs)
-end
-
-function walk_nodes(f, node::Sequence)
-    f(node)
-    for e in node.elements
-        walk_nodes(f, e)
-    end
-end
-
-function walk_nodes(f, node::Alternatives)
-    f(node)
-    for alt in node.alternatives
-        walk_nodes(f, alt)
-    end
-end
-
-function walk_nodes(f, node::Repeat)
-    f(node)
-    walk_nodes(f, node.node)
-end
-
-function walk_nodes(f, node::Constructor)
-    f(node)
-    walk_nodes(f, node.node)
-end
 
 function print_uid_index(grammar::BNFGrammar)
     for (k, v) in grammar.uid_index
