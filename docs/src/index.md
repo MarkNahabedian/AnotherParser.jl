@@ -188,7 +188,7 @@ grammar and pne that is built dorectly form the BNF definition of BNF
 syntax.  The forner is used to bootstrap the latter.
 
 ```
-Pkg.add(; path="./examples/BNFExample")
+Pkg.develop(path="./examples/BNFExample")
 using BNFExample
 ```
 
@@ -270,6 +270,28 @@ The grammar for BNF itself is specified as BNF.  The file
 
 There is some machinery to orchestrate that.  I won't decribe it here.
 I hope the implementation is clear enough.
+
+
+## Defining New Subtypes of BNFNode
+
+When defining new subtypes of BNFNode, use the [`@bnfnode`](@ref) macro:
+
+```
+@bnfnode struct MyNodeType <: BNFNode
+    ...
+end
+```
+
+This macro adds the `uid` and `source` fields, which are common to
+all noed types, and massages any internal constructor functions
+accordingly.
+
+Your new node type must also support the following methods:
+[`pretty`](@ref), and [`recognize`](@ref).
+
+If your type refers to another node type, it might also need to
+implement [`is_left_recursive`](@ref), [`walk_nodes`](@ref), and
+[`check_references`](2ref).
 
 
 ## Index
