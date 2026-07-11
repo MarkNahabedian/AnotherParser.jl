@@ -1,6 +1,8 @@
 # An example grammar for arithmetic expressions.
 
 using AnotherParser
+
+Pkg.develop(path=joinpath(@__DIR__, "../BNFExample"))
 using BNFExample
 
 delete!(AllGrammars, :LeftRecursiveArithmeticGrammar)
