@@ -47,7 +47,7 @@ end
 
 
 """
-    debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; index = 1, finish = length(input), context=nothing, report_file::AbstractString, enable_debug_logging_for = should_enable_debug_logging_for)
+    debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; index = 1, finish = lastindex(input), context=nothing, report_file::AbstractString, enable_debug_logging_for = should_enable_debug_logging_for)
 
 Run the parser specified by `grammar` and `rulename` to parse `input`
 from `index` to `finish` with the specified `context` object.  The
