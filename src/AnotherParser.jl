@@ -17,6 +17,7 @@ include("note_BNFNode_location.jl")
 include("parser.jl")
 include("constructor_functions.jl")
 include("BNFtypes.jl")
+include("node_reverse_index.jl")
 include("debug_parser.jl");
 include("check_references.jl")
 include("pprint.jl")
