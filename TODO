@@ -45,7 +45,7 @@ Why are the XML conformance tests unzipped twice?
 Index from a node to its parent, so that we can derive an expression
 from AllGrammars down through a DerivationRule to a node.  THen we can
 be soecific about which node is triggering a mismatch and report it.
-Should we have Dicts for the indices of have mytable fields in the
+Should we have Dicts for the indices or have mutable fields in the
 BNFNodes?
 
 
