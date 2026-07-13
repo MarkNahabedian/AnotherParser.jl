@@ -1,5 +1,11 @@
 TODO:
 
+If we get source locations working for BNF nodes then maybe we can use
+the source location rather than the result of next_node_id as the node
+unique id.  This would ensure that the node ids are stable so long as
+the sources haven't changes.
+
+
 Maybe have a separate file for each subtype of BNFNode.  We should at
 least move the walk_nodes functions to nearer their node definitions.
 How to preserve git history across such a move?
@@ -33,9 +39,6 @@ methods(AnotherParser.recognize)
 ** recognize(::Parser, node, input::AbstractString, index::Int, finish::Int, context::Any)
  [16] recognize(n::BNFNode, input::AbstractString; index, finish, parser, context)
      @ ~/.julia/dev/AnotherParser/src/BNFtypes.jl:73
-
-
-Why are the XML conformance tests unzipped twice?
 
 
 When constructing BNFNode names, don't include package prefix.
