@@ -1,6 +1,8 @@
 
 using AnotherParser
 
+Pkg.activate(; temp=true)
+
 Pkg.develop(path=joinpath(@__DIR__, "BNFExample"))
 using BNFExample
 
