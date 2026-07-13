@@ -287,7 +287,7 @@ all noed types, and massages any internal constructor functions
 accordingly.
 
 Your new node type must also support the following methods:
-[`pretty`](@ref), and [`recognize`](@ref).
+[`pretty`](@ref), [`recognize`](@ref), ans [`path_to_node`](@ref).
 
 If your type refers to another node type, it might also need to
 implement [`is_left_recursive`](@ref), [`walk_nodes`](@ref), and
