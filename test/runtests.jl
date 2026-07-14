@@ -11,22 +11,34 @@ end
 
 @testset "test EndOfInput" begin
     let
+        p = Parser()
         matched, v, i = recognize(EndOfInput(),
-                                  "abcd"; index = 1)
+                                  "abcd"; index = 1, parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == false
         @test v == nothing
         @test i == 1
     end
     let
-        matched, v, i = recognize(EndOfInput(),
-                                  "abcd"; index = 3, finish = 2)
+        p = Parser()
+        matched, v, i = recognize(EndOfInput(), "abcd";
+                                  index = 3, finish = 2, parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == nothing
         @test i == 3
     end
     let
-        matched, v, i = recognize(EndOfInput(),
-                                  "abcd"; index = 5)
+        p = Parser()
+        matched, v, i = recognize(EndOfInput(), "abcd";
+                                  parser = p, index = 5)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == nothing
         @test i == 5
@@ -35,8 +47,12 @@ end
 
 @testset "test CharacterLiteral" begin
     let
-        matched, v, i = recognize(CharacterLiteral('z'),
-                                  "abzd"; index = 3)
+        p = Parser()
+        matched, v, i = recognize(CharacterLiteral('z'), "abzd";
+                                  parser = p, index = 3)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 4
         @test v == 'z'
@@ -47,8 +63,9 @@ end
         matched, v, i = recognize(node, "abzd"; index = 2, parser = p)
         @test matched == false
         @test i == 2
-        @test p.failing_index == 2
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(2, node, "b doesn't match 'z'")
+        ])
     end
     let
         p = Parser()
@@ -57,8 +74,9 @@ end
         @test matched == false
         @test i == 5
         @test v == nothing
-        @test p.failing_index == 5
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(5, node, "input exhausted")
+        ])
     end
     let
         p = Parser()
@@ -68,15 +86,20 @@ end
         @test matched == false
         @test i == 4
         @test v == nothing
-        @test p.failing_index == 4
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(4, node, "input exhausted")
+        ])
     end
 end
 
 @testset "test CharacterInSet" begin
     let
+        p = Parser()
         matched, v, i = recognize(CharacterInSet(['a', 'y', 'z']),
-                                  "abzd")
+                                  "abzd"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 2
         @test v == 'a'
@@ -88,8 +111,9 @@ end
         @test matched == false
         @test i == 1
         @test v == nothing
-        @test p.failing_index == 1
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(1, node, "z not in character set")
+        ])
     end
 end
 
@@ -97,7 +121,11 @@ end
     predicate = c -> c in "abc"
     node = CharacterSatisfiesPredicate(predicate)
     let
-        matched, v, i = recognize(node, "abcd")
+        p = Parser()
+        matched, v, i = recognize(node, "abcd"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 2
         @test v == 'a'        
@@ -108,21 +136,32 @@ end
         @test matched == false
         @test i == 1
         @test v == nothing
-        @test p.failing_index == 1
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{
+            ParseFailure}([
+                ParseFailure(1, node, "z doesn't satisfy predicate")
+            ])
     end
 end
 
 @testset "test StringLiteral" begin
     let
-        matched, v, i = recognize(StringLiteral(""), "abcd")
+        p = Parser()
+        matched, v, i = recognize(StringLiteral(""), "abcd";
+                                  parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == ""
         @test i == 1
     end
     let
-        matched, v, i = recognize(StringLiteral("abc"),
-                                  "abcd")
+        p = Parser()
+        matched, v, i = recognize(StringLiteral("abc"), "abcd";
+                                  parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 4
         @test v == "abc"
@@ -134,8 +173,10 @@ end
         @test matched == false
         @test i == 2
         @test v == nothing
-        @test p.failing_index == 2
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{
+            ParseFailure}([
+                ParseFailure(2, node, "no match")
+            ])
     end
     let
         p = Parser()
@@ -145,13 +186,19 @@ end
         @test matched == false
         @test i == 2
         @test v == nothing
-        @test p.failing_index == 2
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(2, node, "end of string to match exceeds 3")
+        ])
     end
     let
+        p = Parser()
         matched, v, i = recognize(Sequence(StringLiteral("bcd"),
                                            StringLiteral("efg")),
-                                  "abcdefghi"; index = 2, finish = 7)
+                                  "abcdefghi"; index = 2, finish = 7,
+                                  parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 8
         @test v == ["bcd", "efg"]
@@ -161,7 +208,11 @@ end
     let
         input = "abcd" * Char(0x1F4A9) * "efghi"
         seek = SubString(input, 1, 9)
-        matched, v, i = recognize(StringLiteral(seek), input)
+        p = Parser()
+        matched, v, i = recognize(StringLiteral(seek), input; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 10
         @test v == seek
@@ -174,7 +225,12 @@ end
 
 @testset "test RegexNode" begin
     let
-        matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123"; index = 2)
+        p = Parser()
+        matched, v, i = recognize(RegexNode(r"[a-z]+"), "abcd123";
+                                  parser = p, index = 2)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test i == 5
         @test v.match == "bcd"
@@ -185,21 +241,25 @@ end
         node = RegexNode(r"[a-z]+")
         matched, v, i = recognize(node, "a1bcd123";
                                   parser = p, index = 2)
-        #HUH???
-        # @test matched = false
+        @test matched == false
         @test i == 2
         @test v == nothing
-        @test p.failing_index == 2
-        @test p.failing_nodes == Set{BNFNode}([node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(2, node, "match starts at 3 not at 2")
+        ])
     end
 end
 
 @testset "test Sequence" begin
     let
+        p = Parser()
         matched, v, i = recognize(Sequence(CharacterLiteral('a'),
                                            CharacterLiteral('b'),
                                            CharacterLiteral('c')),
-                                  "abcd")
+                                  "abcd"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == ['a', 'b', 'c']
         @test i == 4
@@ -213,17 +273,22 @@ end
         @test matched == false
         @test v == nothing
         @test i == 1
-        @test p.failing_index == 2
-        @test p.failing_nodes == Set{BNFNode}([node.elements[2]])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(2, node.elements[2], "B doesn't match 'b'")
+        ])
     end
 end
 
 @testset "test Alternatives" begin
     let
+        p = Parser()
         matched, v, i = recognize(Alternatives(CharacterLiteral('a'),
                                                CharacterLiteral('b'),
                                                CharacterLiteral('c')),
-                                 "abcd")
+                                 "abcd"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == 'a'
         @test i == 2
@@ -231,22 +296,30 @@ end
     let
         @info "Alternatives 2"
         p = Parser()
-        node = Alternatives(CharacterLiteral('a'),
-                            CharacterLiteral('b'),
-                            CharacterLiteral('c'))
+        cla = CharacterLiteral('a')
+        clb = CharacterLiteral('b')
+        clc = CharacterLiteral('c')
+        node = Alternatives(cla, clb, clc)
         matched, v, i = recognize(node, "Abcd"; parser = p)
         @test matched == false
         @test v == nothing
         @test i == 1
-        @test p.failing_index == 1
-        @test p.failing_nodes == Set{BNFNode}([node, node.alternatives...])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(1, cla, "A doesn't match 'a'"),
+            ParseFailure(1, clb, "A doesn't match 'b'"),
+            ParseFailure(1, clc, "A doesn't match 'c'")
+        ])
     end
 end
 
 @testset "test Repeat" begin
     let
+        p = Parser()
         matched, v, i = recognize(Repeat(CharacterLiteral('a')),
-                                  "")
+                                  ""; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == []
         @test i == 1
@@ -258,26 +331,40 @@ end
         @test matched == false
         @test v == nothing
         @test i == 1
-        @test p.failing_index == 1
-        @test p.failing_nodes == Set{BNFNode}([node, node.node])
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(1, node, "only 0 matches, < 1"),
+            ParseFailure(1, node.node, "input exhausted")
+        ])
     end
     let
+        p = Parser()
         matched, v, i = recognize(Repeat(CharacterLiteral('a')),
-                                  "aaa")
+                                  "aaa"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == ['a', 'a', 'a']
         @test i == 4
     end
     let
+        p = Parser()
         matched, v, i = recognize(Repeat(CharacterLiteral('a')),
-                                  "aaab")
+                                  "aaab"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == ['a', 'a', 'a']
         @test i == 4
     end
     let
+        p = Parser()
         matched, v, i = recognize(Repeat(CharacterLiteral('a'); max=2),
-                                  "aaab")
+                                  "aaab"; parser = p)
+        if !matched
+            @warn("parse_failed", p.parse_failures)
+        end
         @test matched == true
         @test v == ['a', 'a']
         @test i == 3

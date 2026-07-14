@@ -1,4 +1,4 @@
-export Parser, DEBUG_BNFNODES
+export ParseFailure, Parser, recognize1, DEBUG_BNFNODES
 
 """
     DEBUG_BNFNODES
@@ -9,30 +9,49 @@ index.
 """
 DEBUG_BNFNODES = []
 
+struct ParseFailure
+    failing_index::Int    # the position in input that failed to match failing_node
+    failing_node::BNFNode
+    failing_reason::AbstractString
+end
+
+function Base.string(pf::ParseFailure)
+    join(["Parse failure",
+          "@$(pf.failing_index)",
+          pf.failing_node,     # path_to_node(pf.failing_node),
+          pf.failing_reason],
+         " ")
+end
+
 mutable struct Parser
     call_counter::Int
     recognize1_cache::Dict
     pending_parse_token
     # Try to give the user a hint of where the parse is failing:
-    failing_index::Int
-    failing_nodes::Set{BNFNode}
+    parse_failures::Set{ParseFailure}
 
-    Parser() = new(1, Dict(), gensym(), 1, Set{BNFNode}([]))
+    Parser() = new(1, Dict(), gensym(), Set{ParseFailure}([]))
 end
 
-function parse_failed_at(parser::Parser, failing_index::Int, failing_node::BNFNode)
-    # @info("parse_failed_at", failing_index, failing_node)
-    if failing_index < parser.failing_index
+function parse_failed_at(parser::Parser, failing_index::Int, failing_node::BNFNode,
+                         reason::AbstractString)
+    parse_failed_at(parser, ParseFailure(failing_index, failing_node, reason))
+end
+
+function parse_failed_at(parser::Parser, pf::ParseFailure)
+    best_so_far = maximum(pf -> pf.failing_index,
+                          parser.parse_failures;
+                          init = 1)
+    if pf.failing_index < best_so_far
         # Ignore.  We've already done better.
         return
-    elseif failing_index == parser.failing_index
-        push!(parser.failing_nodes, failing_node)
-    else
-        empty!(parser.failing_nodes)
-        push!(parser.failing_nodes, failing_node)
-        parser.failing_index = failing_index
     end
-    # @info("  high water", parser.failing_index, parser.failing_nodes)
+    if pf.failing_index == best_so_far
+        push!(parser.parse_failures, pf)
+    else
+        empty!(parser.parse_failures)
+        push!(parser.parse_failures, pf)
+    end
     nothing
 end
 

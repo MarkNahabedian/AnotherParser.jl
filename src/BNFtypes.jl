@@ -153,7 +153,9 @@ function recognize(p::Parser, n::Sequence,
     for n1 in n.elements
         matched, v, i = recognize1(p, n1, input, in, finish, context)
         if !matched
-            parse_failed_at(p, index, n)
+            # No need to report the Sequence node since the failing
+            # element node will already have been reported:
+            # parse_failed_at(p, index, n, )
             return false, nothing, index
         end
         in = i
@@ -199,8 +201,13 @@ function recognize(p::Parser, n::Alternatives,
     # If one of the alternatives is Empty, we want our match to
     # succeed. WHAT ABOUT INFINITE RECURSION?
     besti = index - 1
+    # Temporarily record each alternative that fails.  If any
+    # alternatives succeed then forget all of the failures,
+    # otherwise note the one that progressed the furthest.
+    p2 = Parser()
     for n1 in n.alternatives
-        matched, v, i = recognize1(p, n1, input, index, finish, context)
+        # Some alternatives might make it further than others.  UNIT TEST!!!!
+        matched, v, i = recognize1(p2, n1, input, index, finish, context)
         if matched && i > besti
             alts_matched = true
             bestv = v
@@ -208,7 +215,11 @@ function recognize(p::Parser, n::Alternatives,
         end
     end
     if !alts_matched
-        parse_failed_at(p, index, n)
+        # If all alternatives fail at the same index should we just
+        # issue one ParseFailure?
+        for pf in p2.parse_failures
+            parse_failed_at(p, pf)
+        end
         return false, nothing, index
     end
     return true, bestv, besti
@@ -271,7 +282,7 @@ function recognize(p::Parser, n::Repeat,
         end
     end
     if n.min > length(result)
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "only $(length(result)) matches, < $(n.min)")
         return false, nothing, index
     end
     return true, result, in
@@ -299,14 +310,14 @@ function recognize(p::Parser, n::CharacterLiteral,
                    input::AbstractString, index::Int, finish::Int,
                    context::Any)
     if exhausted(input, index, finish)
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "input exhausted")
         return false, nothing, index
     end
     c = input[index]
     if c == n.character
         return true, c, nextind(input, index, 1)
     end
-    parse_failed_at(p, index, n)
+    parse_failed_at(p, index, n, "$c doesn't match '$(n.character)'")
     return false, nothing, index
 end
 
@@ -332,14 +343,14 @@ function recognize(p::Parser, n::CharacterInSet,
                    input::AbstractString, index::Int, finish::Int,
                    context::Any)
     if exhausted(input, index, finish)
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "input exhausted")
         return false, nothing, index
     end
     c = input[index]
     if c in n.chars
         return true, c, nextind(input, index, 1)
     end
-    parse_failed_at(p, index, n)
+    parse_failed_at(p, index, n, "$c not in character set")
     return false, nothing, index
 end
 
@@ -364,7 +375,7 @@ function recognize(p::Parser, n::CharacterSatisfiesPredicate,
     if n.predicate(c)
         return true, c, nextind(input, index, 1)
     end
-    parse_failed_at(p, index, n)
+    parse_failed_at(p, index, n, "$c doesn't satisfy predicate")
     return false, nothing, index
 end
 
@@ -389,11 +400,11 @@ function recognize(p::Parser, n::StringLiteral,
         return true, n.str, index
     end
     if index > finish
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "$index exceeds $finish")
         return false, nothing, index
     end
     if nextind(input, index, length(n.str) - 1) > finish
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "end of string to match exceeds $finish")
         return false, nothing, index
     end
     if startswith(SubString(input, index), n.str)
@@ -401,7 +412,7 @@ function recognize(p::Parser, n::StringLiteral,
                 n.str,
                 nextind(input, index, length(n.str)))
     end
-    parse_failed_at(p, index, n)
+    parse_failed_at(p, index, n, "no match")
     return false, nothing, index
 end
 
@@ -426,15 +437,15 @@ function recognize(p::Parser, n::RegexNode,
                    context::Any)
     m = match(n.re, input, index)
     if m == nothing
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "no match")
         return false, nothing, index
     end
     if m.offset != index
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "match starts at $(m.offset) not at $index")
         return false, nothing, index
     end
     if m.offset != index
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "match starts at $(m.offset) not at $index")
         return false, nothing, index
     end
     return true, m, nextind(input, index, length(m.match))
@@ -464,7 +475,9 @@ function recognize(p::Parser, n::Constructor,
                    context::Any)
     matched, v, i = recognize1(p, n.node, input, index, finish, context)
     if !matched
-        parse_failed_at(p, index, n)
+        # No need to report this node since n.node will have reported
+        # the failure:
+        # parse_failed_at(p, index, n, "child didn't match")
         return false, v, i
     end
     v2 = n.constructor(context, input, index, prevind(input, i, 1), v)
@@ -588,7 +601,9 @@ function recognize(p::Parser, n::DerivationRule,
                    context::Any)
     matched, v, i = recognize1(p, n.lhs, input, index, finish, context)
     if !matched
-        parse_failed_at(p, index, n)
+        # No need to report n since n.lhs will aready have been
+        # reported:
+        # parse_failed_at(p, index, n)
         return false, v, i
     end
     v2 = n.constructor(context, input, index,
@@ -682,7 +697,7 @@ function recognize(p::Parser, n::Excluding,
                    context::Any)
     matched, v, i = recognize1(p, n.exclude, input, index, finish, context)
     if matched
-        parse_failed_at(p, index, n)
+        parse_failed_at(p, index, n, "n.exclude matched")
         return false, nothing, i
     end
     recognize1(p, n.match, input, index, finish, context)
