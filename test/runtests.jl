@@ -10,20 +10,21 @@ using Test
 end
 
 @testset "test EndOfInput" begin
+    node = EndOfInput()
     let
         p = Parser()
-        matched, v, i = recognize(EndOfInput(),
-                                  "abcd"; index = 1, parser = p)
-        if !matched
-            @warn("parse_failed", p.parse_failures)
-        end
+        matched, v, i = recognize(node, "abcd";
+                                  index = 1, parser = p)
         @test matched == false
         @test v == nothing
         @test i == 1
+        @test p.parse_failures == Set{ParseFailure}([
+            ParseFailure(1, node, "input not exhausted")
+        ])
     end
     let
         p = Parser()
-        matched, v, i = recognize(EndOfInput(), "abcd";
+        matched, v, i = recognize(node, "abcd";
                                   index = 3, finish = 2, parser = p)
         if !matched
             @warn("parse_failed", p.parse_failures)
@@ -34,7 +35,7 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize(EndOfInput(), "abcd";
+        matched, v, i = recognize(node, "abcd";
                                   parser = p, index = 5)
         if !matched
             @warn("parse_failed", p.parse_failures)

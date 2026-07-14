@@ -98,7 +98,12 @@ pretty(::EndOfInput) = "EndOfInput()"
 function recognize(p::Parser, n::EndOfInput,
                    input::AbstractString, index::Int, finish::Int,
                    context::Any)
-    return exhausted(input, index, finish), nothing, index
+    ex = exhausted(input, index, finish)
+    if ex
+        return true, nothing, index
+    end
+    parse_failed_at(p, index, n, "input not exhausted")
+    return false, nothing, index
 end
 
 
