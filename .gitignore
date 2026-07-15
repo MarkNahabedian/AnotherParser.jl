@@ -1,3 +1,4 @@
 /docs/build
 examples/XML/DEBUG*.jl
 examples/XMLExample/test/w3c_tests
+examples/XMLExample/test/debug/
