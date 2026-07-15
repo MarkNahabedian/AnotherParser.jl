@@ -449,10 +449,6 @@ function recognize(p::Parser, n::RegexNode,
         parse_failed_at(p, index, n, "match starts at $(m.offset) not at $index")
         return false, nothing, index
     end
-    if m.offset != index
-        parse_failed_at(p, index, n, "match starts at $(m.offset) not at $index")
-        return false, nothing, index
-    end
     return true, m, nextind(input, index, length(m.match))
 end
 
