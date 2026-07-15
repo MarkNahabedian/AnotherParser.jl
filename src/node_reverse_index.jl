@@ -5,7 +5,10 @@ export NODE_TO_PARENT, index_grammar, index_grammars, path_to_node
 
 const NODE_TO_PARENT = Dict{BNFNode, Tuple{BNFNode, Symbol}}()
 
-index_node(parent::BNFNode, fieldname::Symbol, child::BNFNode) = NODE_TO_PARENT[child] = (parent, fieldname)
+function index_node(parent::BNFNode, fieldname::Symbol, child::BNFNode)
+    @assert getfield(parent, fieldname) == child
+    NODE_TO_PARENT[child] = (parent, fieldname)
+end
 
 function index_grammars()
     for g in values(AllGrammars)
