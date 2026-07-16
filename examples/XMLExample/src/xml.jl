@@ -1,5 +1,3 @@
-# This is not the full BNF for XML.  It is provided here as an example
-# of how to use AnotherParser.
 
 using OrderedCollections: OrderedDict
 
@@ -295,10 +293,14 @@ DerivationRule(:XML, "PI",
                                                       StringLiteral("?>"),
                                                       Repeat(BNFRef(:XML, "Char"))),
                                              Repeat(BNFRef(:XML, "Char")))
-                                         =#
+                                         # This either:
                                          Repeat(
                                              Excluding(StringLiteral("?>"),
-                                                       BNFRef(:XML, "Char"))));
+                                                       BNFRef(:XML, "Char")))
+                                         =#
+                                         EndFenced(Repeat(BNFRef(:XML, "Char")),
+                                                   "?>")
+                                         );
                                 max=1),
                             substring_constructor_function),
                         StringLiteral("?>"))
@@ -343,11 +345,14 @@ DerivationRule(:XML, "CData",
                        StringLiteral("]]>"),
                        Repeat(BNFRef(:XML, "Char"))),
                    Repeat(BNFRef(:XML, "Char")))
-               =#
+               #
                Repeat(
                    Excluding(
                        StringLiteral("]]>"),
                        BNFRef(:XML, "Char")))
+               =#
+               EndFenced(Repeat(BNFRef(:XML, "Char")),
+                         "]]>")
                ).constructor = substring_constructor_function
 
 # [21]  https://www.w3.org/TR/xml/#NT-CDEnd
