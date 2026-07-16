@@ -4,8 +4,9 @@ export EndFenced
 """
     EndFenced(match::BNFNode, fence::AbstractString)
 
-Match `match` usinh a `finish` argument that is the starting position
-of `fence`.  If `fence` does not occur then the end of input is used.
+Match `match` using a `finish` argument that is one character before
+the starting position of `fence`.  If `fence` does not occur then the
+end of input of `finish` is used.
 """
 @bnfnode struct EndFenced <:BNFNode
     match::BNFNode
