@@ -55,10 +55,39 @@ function parse_failed_at(parser::Parser, pf::ParseFailure)
     nothing
 end
 
-function recognize1(p::Parser, n::BNFNode, input::AbstractString;
-                    index = 1, finish = length(input), context = nothing)
-    recognize1(p, n, input, index, finish, context)
+
+"""
+    parse(n::BNFNode, input::AbstractString; index = firstindex(input), finish = lastindex(input), parser::Parser = Parser(), context = nothing)
+
+`parse` is the preferred entry point for invoking the parser.  This is
+where all of the argument defaulting happens.
+
+`parse` returns two values: the result of the parse (or nothing if
+unsuccessful) and the `Parser` object that was used for parsing.
+"""
+function parse(n::BNFNode, input::AbstractString;
+               index = firstindex(input), finish = lastindex(input), 
+               parser::Parser = Parser(),
+               context = nothing)
+    matched, v, i = recognize1(parser, n, input, index, finish, context)
+    if matched
+        return v, parser
+    else
+        return nothing, parser
+    end
 end
+
+"""
+    recognize1(n::BNFNode, input::AbstractString; parser = Parser(), index = 1, finish = lastindex(input), context = nothing)
+    recognize1(p::Parser, n::BNFNode, input::AbstractString; index = 1, finish = lastindex(input), context = nothing)
+
+`recognize` is a common intermediate point used by `recognize` in the
+parsing process to perform logging.
+"""
+recognize1(n::BNFNode, input::AbstractString;
+           parser = Parser(), index = firstindex(input), finish = lastindex(input),
+           context = nothing) =
+               recognize1(parser, n, input, index, finish, context)
 
 function recognize1(p::Parser, n::BNFNode, input::AbstractString,
                     index::Int, finish::Int, context)

@@ -35,14 +35,14 @@ function showingTraces(body, mod::Module, vbl::Symbol, showtraces::Bool)
 end
 
 @testset "Recognize empty Sequence" begin
-    @test recognize(Sequence(), "abcd") == (true, [], 1)
-    @test recognize(CharacterLiteral('a'), "ab") == (true, 'a', 2)
-    @test recognize(Alternatives(CharacterLiteral('a')), "bb") == (false, nothing, 1)
-    @test recognize(Alternatives(CharacterLiteral('a')), "ab") == (true, 'a', 2)
-    @test recognize(Alternatives(Empty(), CharacterLiteral('a')),
-                    "bb") == (true, nothing, 1)
-    @test recognize(Alternatives(Empty(),
-                                 CharacterLiteral('a')), "ab") == (true, 'a', 2)
+    @test recognize1(Sequence(), "abcd") == (true, [], 1)
+    @test recognize1(CharacterLiteral('a'), "ab") == (true, 'a', 2)
+    @test recognize1(Alternatives(CharacterLiteral('a')), "bb") == (false, nothing, 1)
+    @test recognize1(Alternatives(CharacterLiteral('a')), "ab") == (true, 'a', 2)
+    @test recognize1(Alternatives(Empty(), CharacterLiteral('a')),
+                     "bb") == (true, nothing, 1)
+    @test recognize1(Alternatives(Empty(),
+                                  CharacterLiteral('a')), "ab") == (true, 'a', 2)
 end
 
 BNFGrammar(:TestGrammar)
@@ -50,69 +50,63 @@ BNFGrammar(:TestGrammar)
 @testset "Test hand coded BNF grammar" begin
     grammar = AllGrammars[:BootstrapBNFGrammar]
     let
-        matched, v, i = recognize(grammar["<character1>"], "abcd")
+        matched, v, i = recognize1(grammar["<character1>"], "abcd")
         @test matched = true
         @test v == 'a'
         @test i== 2
     end
     let
-        matched, v, i = recognize(grammar["<literal>"],
-                                  "'abcd'")
+        matched, v, i = recognize1(grammar["<literal>"], "'abcd'")
         @test matched == true
         @test i == 7
         @test v isa StringLiteral
         @test v.str == "abcd"
     end
     let
-        matched, v, i = recognize(grammar["<rule-name>"],
-                                  "abcd ")
+        matched, v, i = recognize1(grammar["<rule-name>"], "abcd ")
         @test matched == true
         @test i == 5
         @test v == "abcd"
     end
     let
         # loggingReductions() do
-        matched, v, i = recognize(grammar["<rule-name>"],
-                                  "abcd")
+        matched, v, i = recognize1(grammar["<rule-name>"], "abcd")
         @test matched == true
         @test i == 5
         @test v == "abcd"
     end
     let
-        matched, v, i = recognize(grammar["<term>"],
-                                  "'abcd'")
+        matched, v, i = recognize1(grammar["<term>"], "'abcd'")
         @test matched == true
         @test i == 7
         @test v isa StringLiteral
         @test v.str == "abcd"        
     end
     let
-        matched, v, i = recognize(grammar["<term>"],
-                                  "<abcd>";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(grammar["<term>"], "<abcd>";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 7
         @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
-        matched, v, i = recognize(grammar["<list>"],
-                                  "<abcd>";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(grammar["<list>"], "<abcd>";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 7
         @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
-        matched, v, i = recognize(grammar["<expression>"],
-                                  "<abcd>"; context = :TestGrammar)
+        matched, v, i = recognize1(grammar["<expression>"], "<abcd>";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 7
         @test nodeeq(v, BNFRef(grammar.name, "<abcd>"))
     end
     let
-        matched, v, i = recognize(grammar["<list>"],
-                                  "<abcd> 'efgh' 'i'";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(grammar["<list>"],
+                                   "<abcd> 'efgh' 'i'";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 18
         want = Sequence(BNFRef(:TestGrammar, "<abcd>"),
@@ -121,8 +115,8 @@ BNFGrammar(:TestGrammar)
         @test nodeeq(v, want)
     end
     let
-        matched, v, i = recognize(BNFRef(grammar.name, "<expression>"),
-                                  "<a1> | <a2>"; context = :TestGrammar)
+        matched, v, i = recognize1(BNFRef(grammar.name, "<expression>"),
+                                   "<a1> | <a2>"; context = :TestGrammar)
         @test matched == true
         @test i == 12
         want = Alternatives(BNFRef(:BootstrapB2NFGrammar, "<a1>"),
@@ -130,9 +124,9 @@ BNFGrammar(:TestGrammar)
         @test nodeeq(v, want)
     end    
     let
-        matched, v, i = recognize(BNFRef(grammar.name, "<expression>"),
-                                  "<a1> | <a2> | <a3>";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(BNFRef(grammar.name, "<expression>"),
+                                   "<a1> | <a2> | <a3>";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 19
         want = Alternatives(BNFRef(grammar.name, "<a1>"),
@@ -143,25 +137,25 @@ BNFGrammar(:TestGrammar)
     # Trying to hunt down the infinite recursion problem at the end of <rule>.
     # These next two blocks show that the empty tail in <opt-whitespace> is safe.
     let
-        matched, v, i = recognize(BNFRef(grammar.name, "<opt-whitespace>"),
-                                  "  ";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(BNFRef(grammar.name, "<opt-whitespace>"),
+                                   "  ";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 3
         @test v== nothing
     end
     let
-        matched, v, i = recognize(BNFRef(grammar.name, "<opt-whitespace>"),
-                                  "";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(BNFRef(grammar.name, "<opt-whitespace>"),
+                                   "";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 1
         @test v== nothing
     end
     let
-        matched, v, i = recognize(BNFRef(grammar.name, "<rule>"),
-                                  "<xs> ::= 'x' | 'x' <xs>\n";
-                                  context = :TestGrammar)
+        matched, v, i = recognize1(BNFRef(grammar.name, "<rule>"),
+                                   "<xs> ::= 'x' | 'x' <xs>\n";
+                                   context = :TestGrammar)
         @test matched == true
         @test i == 25
         want = DerivationRule(:TestGrammar, "<xs>",

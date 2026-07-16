@@ -14,7 +14,7 @@ function do_bnf_str(str::String, grammar_name::Symbol, source)
     bnf = AllGrammars[which_BNF_grammar]
     # How to set source location?  Do we need to include it in the
     # context?
-    recognize(bnf["<syntax>"], str; context=grammar_name)
+    recognize1(bnf["<syntax>"], str; context=grammar_name)
 end
 
 

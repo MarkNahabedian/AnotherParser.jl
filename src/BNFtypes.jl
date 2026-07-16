@@ -70,12 +70,6 @@ is otherwise unused.
 """
 function recognize end
 
-recognize(n::BNFNode, input::AbstractString;
-          index=1, finish=lastindex(input),
-          parser=Parser(),
-          context=nothing) =
-              recognize(parser, n, input, index, finish, context)
-
 
 # True if input[index] would get out of bounds error.
 # in Julia, "1234"[4] is 4.  5 is out of bounds.

@@ -11,8 +11,8 @@ end
 
 @testset "example arithmetic grammar" begin
     @test !is_left_recursive(AllGrammars[:ExampleArithmeticGrammar])
-    matched, v, i = recognize(AllGrammars[:ExampleArithmeticGrammar]["<expr>"],
-                              "(2+3*(5-1))/2")
+    matched, v, i = recognize1(AllGrammars[:ExampleArithmeticGrammar]["<expr>"],
+                               "(2+3*(5-1))/2")
     @test matched == true
     @test i == 14
     @test eval(v) == 7.0

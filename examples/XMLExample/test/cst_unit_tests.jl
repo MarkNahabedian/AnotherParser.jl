@@ -1,6 +1,6 @@
 
 function test_round_trip(rulename, input)
-    matches, value, i = recognize(AllGrammars[:XML][rulename], input)
+    matches, value, i = recognize1(AllGrammars[:XML][rulename], input)
     got = string(value)
     @assert input == got "$input == $got"
 end

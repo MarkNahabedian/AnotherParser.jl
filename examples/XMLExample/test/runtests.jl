@@ -19,7 +19,7 @@ index_grammars()
     mkpath(joinpath(@__DIR__, "debug"))
     xmltext = read_decoded(xml)
     p = Parser()
-    matched, v, i = recognize(AllGrammars[:XML]["document"], xmltext; parser = p)
+    matched, v, i = recognize1(AllGrammars[:XML]["document"], xmltext; parser = p)
     #=
     # Why does switching to debug_parsing cause unit test failures?
     matched, v, i = debug_parsing(AllGrammars[:XML], "document", xmltext;
