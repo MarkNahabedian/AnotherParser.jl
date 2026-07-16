@@ -10,9 +10,26 @@ Maybe have a separate file for each subtype of BNFNode.  We should at
 least move the walk_nodes functions to nearer their node definitions.
 How to preserve git history across such a move?
 
-For safety, do this in a brtanch to make sure it works.
+For safety, do this in a branch to make sure it works.
 
 * Use cp to make one new copy of BNFtypes.jl for each node type.
+    subtypes(BNFNode)
+    15-element Vector{Any}:
+     Alternatives
+     BNFRef
+     CharacterInSet
+     CharacterLiteral
+     CharacterSatisfiesPredicate
+     Constructor
+     DerivationRule
+     Empty
+     EndFenced
+     EndOfInput
+     Excluding
+     RegexNode
+     Repeat
+     Sequence
+     StringLiteral
 * git add and commit those copies unmodified.
 * remove the duplicate ocde
 * commit
@@ -24,21 +41,7 @@ Rationalize and simplify DEBUG_BNFNODES and enable_debug_logging_for
 keyarg.
 
 
-Maybe have a new entry point function, poaaibly called parse, and then
-just standardize the argument lists for recognize and recognize1.
-Maybe rename recognize recognize_node, and recognize1 to
-recognize_common.  The new finction should have a keyarg to turn on
-debug_parsing logging.
-
-methods(AnotherParser.recognize1)
- [1] recognize1(p::Parser, n::BNFNode, input::AbstractString; index, finish, context)
-     @ ~/.julia/dev/AnotherParser/src/parser.jl:50
- [2] recognize1(p::Parser, n::BNFNode, input::AbstractString, index::Int64, finish::Int64, context)
-     @ ~/.julia/dev/AnotherParser/src/parser.jl:55
-methods(AnotherParser.recognize)
-** recognize(::Parser, node, input::AbstractString, index::Int, finish::Int, context::Any)
- [16] recognize(n::BNFNode, input::AbstractString; index, finish, parser, context)
-     @ ~/.julia/dev/AnotherParser/src/BNFtypes.jl:73
+Merge debug_parsing functionality into parse or recognize1.
 
 
 When constructing BNFNode names, don't include package prefix.
