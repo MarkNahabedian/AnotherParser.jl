@@ -236,6 +236,8 @@ end
 
 Matches repeated occurances of `n`.  The minimum and maxmum number of
 allowed matches can be specified.
+
+Nite that `Repeat` does a greedy match.
 """
 @bnfnode struct Repeat <: BNFNode
     node::BNFNode
@@ -675,6 +677,10 @@ end
 
 Match if the current input matches `match`, but ofly if it does not
 match `exclude`.
+
+USE WITH CAUTION: `Excluding` does not implement the full
+set-theoretic `-` operator of the W3C XML Extended BNF.  Be
+particularly carefule near the `Repeat` node, which is greedy.
 """
 @bnfnode struct Excluding <:BNFNode
     exclude::BNFNode
@@ -703,6 +709,9 @@ function recognize(p::Parser, n::Excluding,
     end
     recognize1(p, n.match, input, index, finish, context)
 end
+
+
+include(joinpath(@__DIR__, "nodes/EndFenced.jl"))
 
 
 function print_uid_index(grammar::BNFGrammar)
