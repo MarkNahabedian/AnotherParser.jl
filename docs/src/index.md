@@ -42,6 +42,8 @@ Each BNFNode implements the `recognize` generic function, which
 performs the actual parsing:
 
 ```@docs
+parse
+recognize1
 recognize
 ```
 
@@ -184,12 +186,24 @@ the full W3C XML grammar.
 ### BNF Grammar EXample
 
 There are two grammars for parsing BNF syntax itself: a hand coded
-grammar and pne that is built dorectly form the BNF definition of BNF
-syntax.  The forner is used to bootstrap the latter.
+grammar (`:BootstrapBNFGrammar`) and one that is built dorectly from
+the BNF definition of BNF syntax (`:BNF) as I found it on Wikipedia.
+The forner is used to bootstrap the latter.  There is some machinery
+to orchestrate that.  I won't decribe it here.  I hope the
+implementation is clear enough.
 
 ```
 Pkg.develop(path="./examples/BNFExample")
 using BNFExample
+```
+
+
+## Prepackages Examples
+
+Several larger examples are also provided.  To load them all:
+
+```
+include("./examples/load_all.jl")
 ```
 
 
@@ -252,6 +266,13 @@ recognize(BNFRef(:XML, "document"), xml)
 ```
 
 
+## Utilities
+
+```@docs
+root_productions
+```
+
+
 ## Debugging
 
 ```@docs
@@ -259,17 +280,6 @@ debug_parsing
 DEBUG_BNFNODES
 AnotherParser.should_enable_debug_logging_for
 ```
-
-## The Grammar for BNF
-
-The grammar for BNF itself is specified as BNF.  The file
-`./examples/BNF/bnf.jl` implements two BNF grammars.
-`:BootstrapBNFGrammar` is a grammar that is hand coded using
-[`BNFNode`](@ref) types.  `:BNF` is automatically built by the
-`:BootstrapBNFGrammar` grammar.
-
-There is some machinery to orchestrate that.  I won't decribe it here.
-I hope the implementation is clear enough.
 
 
 ## Defining New Subtypes of BNFNode
