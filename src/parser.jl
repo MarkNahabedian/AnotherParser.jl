@@ -1,6 +1,15 @@
 export ParseFailure, Parser, recognize1
 
 
+"""
+
+A `ParseFailure` is noted in the `parse_failures` filed of a
+[`Parser`](@ref) for each syntax mismatch.  Its fields are:
+
+* `failing_index`: the index into input where the mismatch occurred.
+* `failing_node`: The node that the input did not match.
+* `failing_reason`: a String explaining the failure.
+"""
 struct ParseFailure
     failing_index::Int    # the position in input that failed to match failing_node
     failing_node::BNFNode
@@ -62,8 +71,13 @@ end
 `parse` is the preferred entry point for invoking the parser.  This is
 where all of the argument defaulting happens.
 
+Do not confuse `pare` with `Base.parse`.
+
 `parse` returns two values: the result of the parse (or nothing if
 unsuccessful) and the `Parser` object that was used for parsing.
+
+The `parse_failures` field of the `Parser` has a Set of
+[`ParseFailure`](@ref) objects if the parse failed.
 """
 function parse(n::BNFNode, input::AbstractString;
                index = firstindex(input), finish = lastindex(input), 
