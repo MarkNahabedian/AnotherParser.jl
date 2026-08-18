@@ -57,6 +57,7 @@ pretty
 is_left_recursive
 walk_nodes
 deep_flatten
+path_to_node
 ```
 
 ## Construction Utilities
@@ -169,8 +170,7 @@ DerivationRule(
 
 # recognize will return a tuple of "word"s and
 # the next index of the input string
-recognize(AllGrammars[:example]["text"],
-          "this  is    a test")
+AnotherParser.parse(AllGrammars[:example]["text"], "this  is    a test")
 ```
 
 There is much room for simplification and syntactic sugar.
@@ -215,7 +215,7 @@ expressions.  It is expressed as a BNF grammar.
 ```
 include("examples/Arithmetic/arithmetic.jl")
 
-recognize(BNFRef(:ExampleArithmeticGrammar, "<expr>"), "2+3*5")
+AnotherParser.parse(BNFRef(:ExampleArithmeticGrammar, "<expr>"), "2+3*5")
 (true, :(2 + 3 * 5), 6)
 ```
 
@@ -230,7 +230,7 @@ using XMLExample
 
 # Running the unit tests for XMLExample will fetch these test files:
 xml = read("./examples/XMLExample/test/w3c_tests/xmlconf/xmltest/valid/sa/001.xml", String)
-recognize(BNFRef(:XML, "document"), xml)
+AnotherParser.parse(BNFRef(:XML, "document"), xml)
 # Result was reindented for readability:
 (true,
  CSTDocument(
@@ -292,16 +292,16 @@ When defining new subtypes of BNFNode, use the [`@bnfnode`](@ref) macro:
 end
 ```
 
-This macro adds the `uid` and `source` fields, which are common to
-all noed types, and massages any internal constructor functions
-accordingly.
-
 Your new node type must also support the following methods:
 [`pretty`](@ref), [`recognize`](@ref), ans [`path_to_node`](@ref).
 
 If your type refers to another node type, it might also need to
 implement [`is_left_recursive`](@ref), [`walk_nodes`](@ref), and
-[`check_references`](2ref).
+[`check_references`](@ref).
+
+```@docs
+@bnfnode
+```
 
 
 ## Index

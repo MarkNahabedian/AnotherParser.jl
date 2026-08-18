@@ -30,6 +30,14 @@ function index_node_children(n::BNFNode)
 end
 
 
+"""
+    path_to_node(::BNFNode)
+
+Returns an expression by which the specified node can be accessed.
+"""
+function path_to_node end
+
+
 function path_to_node(n::BNFNode)
     parent, field = NODE_TO_PARENT[n]
     Expr(:., path_to_node(parent),

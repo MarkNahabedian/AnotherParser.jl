@@ -109,6 +109,15 @@ end
 
 export @bnfnode
 
+"""
+    @bnfnode(expression)
+
+`expression` is a `struct` definition for a subtype of BNFNode.
+
+This macro adds the `uid` and `source` fields, which are common to
+all node types, and massages any internal constructor functions
+accordingly.
+"""
 macro bnfnode(exp)
     mutable, nameexp, fields = grok_struct(exp)
     name = find_name(nameexp)
