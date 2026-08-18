@@ -95,8 +95,12 @@ end
     recognize1(n::BNFNode, input::AbstractString; parser = Parser(), index = 1, finish = lastindex(input), context = nothing)
     recognize1(p::Parser, n::BNFNode, input::AbstractString; index = 1, finish = lastindex(input), context = nothing)
 
-`recognize` is a common intermediate point used by `recognize` in the
+`recognize1` is a common intermediate point used by `recognize` in the
 parsing process to perform logging.
+
+Returns three values: whether the node matched the input, the parsed
+value represented by the matched input, and the next index into
+`input`.
 """
 recognize1(n::BNFNode, input::AbstractString;
            parser = Parser(), index = firstindex(input), finish = lastindex(input),
