@@ -1,6 +1,7 @@
 using AnotherParser
 using AnotherParser: exhausted
 using Test
+using Logging
 
 @testset "Test exhausted" begin
     @test exhausted("12345", 5, 6) == false
@@ -370,6 +371,31 @@ end
         @test v == ['a', 'a']
         @test i == 3
     end
+end
+
+
+TestGrammar1 = BNFGrammar(:TestGrammar1)
+
+DerivationRule(TestGrammar1, "stringOfAs",
+               Repeat(CharacterLiteral('A'), min=1))
+
+@testset "test debug logging" begin
+    logger = TestLogger()
+    parser = Parser()
+    input = "AAAb"
+    note_nodes_to_debug(parser, TestGrammar1, node -> true)
+    @test length(parser.debug_bnfnodes) == length(TestGrammar1.uid_index)
+    with_logger(logger) do
+        matched, v, i = recognize1(TestGrammar1["stringOfAs"], input;
+                                   parser = parser)
+        @test matched == true
+        @test v == [ 'A', 'A', 'A' ]
+        @test i == 4
+    end
+    @test length(logger.logs) == 12
+    AnotherParser.process_and_report_parser_debug_log(TestGrammar1, "stringOfAs", input,
+                                                      logger,
+                                                      joinpath(@__DIR__, "test_stringOfAs.html"))
 end
 
 
