@@ -60,7 +60,7 @@ end
     recognize(::Parser, ::BNFNode, input::AbstractString; index, finish, context)
 
 Attempt to parse `input` as the specified `BNFNode`, starting at `index`.
-Return three values: whether the node matched the input,
+Returns three values: whether the node matched the input,
 the parsed value represented by the matched input,
 and the next index into `input`.
 `finish` is the index into `input` of the last character to be considered.
@@ -486,10 +486,13 @@ end
 
 
 """
-    BNFGrammar
+    BNFGrammar(name::Symbol)
 
 Represents a single grammar which can consist of a number of
 `DerivationRule`s.
+
+Each [`DerivationRule`](@ref) is typically added to the grammar when
+it is constructed.
 """
 struct BNFGrammar
     name::Symbol
