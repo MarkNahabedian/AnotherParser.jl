@@ -65,26 +65,18 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                        report_file::AbstractString,
                        enable_debug_logging_for = should_enable_debug_logging_for)
     logger = TestLogger()
-    let                      # set DEBUG_BNFNODES
-        debug_uids = Set()
+    let          # set parser.debug_bnfnodes from enable_debug_logging_for
         for rule in values(grammar.derivations)
             walk_nodes(rule) do node
                 if enable_debug_logging_for(node)
-                    push!(debug_uids, node.uid)
+                    push!(parser.debug_bnfnodes, node.uid)
                 end
             end
         end
-        saved_debug = AnotherParser.DEBUG_BNFNODES
-        AnotherParser.DEBUG_BNFNODES = collect(debug_uids)
-        try
-            with_logger(logger) do
-                AnotherParser.recognize1(parser, grammar[rulename], input;
-                                         index = index, finish = finish,
-                                         context = context)
-            end
-        finally
-            process_and_report_parser_debug_log(grammar, rulename, input, logger, report_file)
-            AnotherParser.DEBUG_BNFNODES = saved_debug
+        with_logger(logger) do
+            AnotherParser.recognize1(parser, grammar[rulename], input;
+                                     index = index, finish = finish,
+                                     context = context)
         end
     end
 end

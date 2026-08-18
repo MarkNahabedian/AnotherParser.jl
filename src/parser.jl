@@ -1,13 +1,5 @@
-export ParseFailure, Parser, recognize1, DEBUG_BNFNODES
+export ParseFailure, Parser, recognize1
 
-"""
-    DEBUG_BNFNODES
-
-DEBUG_BNFNODES is a list of the node uid's of nodes that should be
-`@info` logged when they match the current input at the specified
-index.
-"""
-DEBUG_BNFNODES = []
 
 struct ParseFailure
     failing_index::Int    # the position in input that failed to match failing_node
@@ -24,13 +16,21 @@ function Base.string(pf::ParseFailure)
 end
 
 mutable struct Parser
+    # debug_bnfnodes is a list of the node uid's of nodes that should
+    # be `@info` logged when they match the current input at the
+    # specified index.
+    debug_bnfnodes::Vector{<:AbstractString}
     call_counter::Int
     recognize1_cache::Dict
     pending_parse_token
     # Try to give the user a hint of where the parse is failing:
     parse_failures::Set{ParseFailure}
 
-    Parser() = new(1, Dict(), gensym(), Set{ParseFailure}([]))
+    Parser() =
+        new(Vector{String}(), 1, Dict(), gensym(), Set{ParseFailure}([]))
+
+    Parser(debug_bnfnodes::Vector{<:AbstractString}) =
+        new(debug_bnfnodes, 1, Dict(), gensym(), Set{ParseFailure}([]))
 end
 
 function parse_failed_at(parser::Parser, failing_index::Int, failing_node::BNFNode,
@@ -91,7 +91,7 @@ recognize1(n::BNFNode, input::AbstractString;
 
 function recognize1(p::Parser, n::BNFNode, input::AbstractString,
                     index::Int, finish::Int, context)
-    dbg = n.uid in DEBUG_BNFNODES
+    dbg = n.uid in p.debug_bnfnodes
     p.call_counter += 1
     call_counter = p.call_counter
     node = pretty(n)
