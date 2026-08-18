@@ -6,12 +6,33 @@ using XML: Document, Element, Text, Comment, CData, escape
 using Logging
 using Test: TestLogger
 
-export debug_parsing
+export debug_parsing, note_nodes_to_debug
 
 
 PARSER_DEBUG_CSS = read(joinpath(@__DIR__, "debug_parser_formatting.css"), String)
 
 PARSER_DEBUG_SCRIPT = read(joinpath(@__DIR__, "debug_parser_javascript.js"), String)
+
+
+"""
+    note_nodes_to_debug(parser::Parser, grammar::BNFGrammar, enable_debug_logging_for)
+
+Updates the `debug_bnfnodes` field of `parser` to enable debug logging
+for those nodes of `grammar` that satisfy `enable_debug_logging_for`,
+a function which takes a `BNFNode` as argument and returns a `Bool`
+whuch is true is logging should be performed for that node.
+"""
+function note_nodes_to_debug(parser::Parser, grammar::BNFGrammar,
+                            enable_debug_logging_for)
+    for rule in values(grammar.derivations)
+        walk_nodes(rule) do node
+            if enable_debug_logging_for(node)
+                push!(parser.debug_bnfnodes, node.uid)
+            end
+        end
+    end
+    parser
+end
 
 
 """
@@ -65,20 +86,12 @@ function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
                        report_file::AbstractString,
                        enable_debug_logging_for = should_enable_debug_logging_for)
     logger = TestLogger()
-    let          # set parser.debug_bnfnodes from enable_debug_logging_for
-        for rule in values(grammar.derivations)
-            walk_nodes(rule) do node
-                if enable_debug_logging_for(node)
-                    push!(parser.debug_bnfnodes, node.uid)
-                end
-            end
-        end
+    note_nodes_to_debug(parser, grammar, enable_debug_logging_for)
         with_logger(logger) do
             AnotherParser.recognize1(parser, grammar[rulename], input;
                                      index = index, finish = finish,
                                      context = context)
         end
-    end
 end
 
 
