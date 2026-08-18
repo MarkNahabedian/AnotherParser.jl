@@ -277,7 +277,6 @@ root_productions
 
 ```@docs
 debug_parsing
-DEBUG_BNFNODES
 AnotherParser.should_enable_debug_logging_for
 ```
 
