@@ -119,7 +119,7 @@ AllGrammars[:ExampleArithmeticGrammar]["<paren-expr>"].constructor =
 
 AllGrammars[:ExampleArithmeticGrammar]["<integer>"].constructor =
     function (context, input::AbstractString, from::Int, to::Int, digit)
-        parse(Int, SubString(input, from, to))
+        Base.parse(Int, SubString(input, from, to))
     end
 
 # <digit uses the identity constructor.

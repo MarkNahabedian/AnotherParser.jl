@@ -1,5 +1,5 @@
 using AnotherParser
-using AnotherParser: exhausted
+using AnotherParser: exhausted, parse
 using Test
 using Logging
 
@@ -14,8 +14,9 @@ end
     node = EndOfInput()
     let
         p = Parser()
-        matched, v, i = recognize1(node, "abcd";
-                                   index = 1, parser = p)
+        matched, v, i, p2 = parse(node, "abcd";
+                                  index = 1, parser = p)
+        @test p === p2
         @test matched == false
         @test v == nothing
         @test i == 1
@@ -25,8 +26,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(node, "abcd";
-                                   index = 3, finish = 2, parser = p)
+        matched, v, i, p2 = parse(node, "abcd";
+                                  index = 3, finish = 2, parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -36,8 +38,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(node, "abcd";
-                                   parser = p, index = 5)
+        matched, v, i, p2 = parse(node, "abcd";
+                                  parser = p, index = 5)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -50,8 +53,9 @@ end
 @testset "test CharacterLiteral" begin
     let
         p = Parser()
-        matched, v, i = recognize1(CharacterLiteral('z'), "abzd";
-                                   parser = p, index = 3)
+        matched, v, i, p2 = parse(CharacterLiteral('z'), "abzd";
+                                  parser = p, index = 3)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -62,7 +66,8 @@ end
     let
         p = Parser()
         node = CharacterLiteral('z')
-        matched, v, i = recognize1(node, "abzd"; index = 2, parser = p)
+        matched, v, i, p2 = parse(node, "abzd"; index = 2, parser = p)
+        @test p === p2
         @test matched == false
         @test i == 2
         @test p.parse_failures == Set{ParseFailure}([
@@ -72,7 +77,8 @@ end
     let
         p = Parser()
         node = CharacterLiteral('z')
-        matched, v, i = recognize1(node, "abzd"; index = 5, parser = p)
+        matched, v, i, p2 = parse(node, "abzd"; index = 5, parser = p)
+        @test p === p2
         @test matched == false
         @test i == 5
         @test v == nothing
@@ -83,8 +89,9 @@ end
     let
         p = Parser()
         node = CharacterLiteral('z')
-        matched, v, i = recognize1(node, "abzd"; index = 4, finish = 3,
-                                   parser = p)
+        matched, v, i, p2 = parse(node, "abzd"; index = 4, finish = 3,
+                                  parser = p)
+        @test p === p2
         @test matched == false
         @test i == 4
         @test v == nothing
@@ -97,8 +104,9 @@ end
 @testset "test CharacterInSet" begin
     let
         p = Parser()
-        matched, v, i = recognize1(CharacterInSet(['a', 'y', 'z']),
-                                   "abzd"; parser = p)
+        matched, v, i, p2 = parse(CharacterInSet(['a', 'y', 'z']),
+                                  "abzd"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -109,7 +117,8 @@ end
     let
         p = Parser()
         node = CharacterInSet(['a', 'b', 'c'])
-        matched, v, i = recognize1(node, "zbcd"; parser = p)
+        matched, v, i, p2 = parse(node, "zbcd"; parser = p)
+        @test p === p2
         @test matched == false
         @test i == 1
         @test v == nothing
@@ -124,7 +133,8 @@ end
     node = CharacterSatisfiesPredicate(predicate)
     let
         p = Parser()
-        matched, v, i = recognize1(node, "abcd"; parser = p)
+        matched, v, i, p2 = parse(node, "abcd"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -134,7 +144,8 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(node, "zbcd"; parser = p)
+        matched, v, i, p2 = parse(node, "zbcd"; parser = p)
+        @test p === p2
         @test matched == false
         @test i == 1
         @test v == nothing
@@ -148,8 +159,9 @@ end
 @testset "test StringLiteral" begin
     let
         p = Parser()
-        matched, v, i = recognize1(StringLiteral(""), "abcd";
-                                   parser = p)
+        matched, v, i, p2 = parse(StringLiteral(""), "abcd";
+                                  parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -159,8 +171,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(StringLiteral("abc"), "abcd";
-                                   parser = p)
+        matched, v, i, p2 = parse(StringLiteral("abc"), "abcd";
+                                  parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -171,7 +184,8 @@ end
     let
         p = Parser()
         node = StringLiteral("abc")
-        matched, v, i = recognize1(node, "abcd"; parser = p, index = 2)
+        matched, v, i, p2 = parse(node, "abcd"; parser = p, index = 2)
+        @test p === p2
         @test matched == false
         @test i == 2
         @test v == nothing
@@ -183,8 +197,9 @@ end
     let
         p = Parser()
         node = StringLiteral("bcd")
-        matched, v, i = recognize1(node, "abcd";
-                                   parser = p, index = 2, finish = 3)
+        matched, v, i, p2 = parse(node, "abcd";
+                                  parser = p, index = 2, finish = 3)
+        @test p === p2
         @test matched == false
         @test i == 2
         @test v == nothing
@@ -194,10 +209,11 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(Sequence(StringLiteral("bcd"),
-                                            StringLiteral("efg")),
-                                   "abcdefghi"; index = 2, finish = 7,
-                                   parser = p)
+        matched, v, i, p2 = parse(Sequence(StringLiteral("bcd"),
+                                           StringLiteral("efg")),
+                                  "abcdefghi"; index = 2, finish = 7,
+                                  parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -210,26 +226,34 @@ end
     let
         input = "abcd" * Char(0x1F4A9) * "efghi"
         seek = SubString(input, 1, 9)
-        p = Parser()
-        matched, v, i = recognize1(StringLiteral(seek), input; parser = p)
-        if !matched
-            @warn("parse_failed", p.parse_failures)
+        let
+            p = Parser()
+            matched, v, i, p2 = parse(StringLiteral(seek), input; parser = p)
+            @test p == p2
+            if !matched
+                @warn("parse_failed", p.parse_failures)
+            end
+            @test matched == true
+            @test i == 10
+            @test v == seek
+            i
+            p = Parser()
+            matched, v, i, p2 = parse(StringLiteral("fghi"), input;
+                                      index = i, parser = p)
+            @test p === p2
+            @test matched == true
+            @test i == 14
+            @test v == "fghi"
         end
-        @test matched == true
-        @test i == 10
-        @test v == seek
-        matched, v, i = recognize1(StringLiteral("fghi"), input; index = i)
-        @test matched == true
-        @test i == 14
-        @test v == "fghi"
     end
 end
 
 @testset "test RegexNode" begin
     let
         p = Parser()
-        matched, v, i = recognize1(RegexNode(r"[a-z]+"), "abcd123";
-                                   parser = p, index = 2)
+        matched, v, i, p2 = parse(RegexNode(r"[a-z]+"), "abcd123";
+                              parser = p, index = 2)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -241,8 +265,8 @@ end
         @info "RegexNode 2"
         p = Parser()
         node = RegexNode(r"[a-z]+")
-        matched, v, i = recognize1(node, "a1bcd123";
-                                   parser = p, index = 2)
+        matched, v, i, p2 = parse(node, "a1bcd123"; parser = p, index = 2)
+        @test p === p2
         @test matched == false
         @test i == 2
         @test v == nothing
@@ -255,10 +279,11 @@ end
 @testset "test Sequence" begin
     let
         p = Parser()
-        matched, v, i = recognize1(Sequence(CharacterLiteral('a'),
-                                            CharacterLiteral('b'),
-                                            CharacterLiteral('c')),
-                                   "abcd"; parser = p)
+        matched, v, i, p2 = parse(Sequence(CharacterLiteral('a'),
+                                           CharacterLiteral('b'),
+                                           CharacterLiteral('c')),
+                                  "abcd"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -271,7 +296,8 @@ end
         node = Sequence(CharacterLiteral('a'),
                         CharacterLiteral('b'),
                         CharacterLiteral('c'))
-        matched, v, i = recognize1(node, "aBcd"; parser = p)
+        matched, v, i, p2 = parse(node, "aBcd"; parser = p)
+        @test p === p2
         @test matched == false
         @test v == nothing
         @test i == 1
@@ -284,10 +310,11 @@ end
 @testset "test Alternatives" begin
     let
         p = Parser()
-        matched, v, i = recognize1(Alternatives(CharacterLiteral('a'),
-                                                CharacterLiteral('b'),
-                                                CharacterLiteral('c')),
-                                   "abcd"; parser = p)
+        matched, v, i, p2 = parse(Alternatives(CharacterLiteral('a'),
+                                               CharacterLiteral('b'),
+                                               CharacterLiteral('c')),
+                                  "abcd"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -302,7 +329,8 @@ end
         clb = CharacterLiteral('b')
         clc = CharacterLiteral('c')
         node = Alternatives(cla, clb, clc)
-        matched, v, i = recognize1(node, "Abcd"; parser = p)
+        matched, v, i, p2 = parse(node, "Abcd"; parser = p)
+        @test p === p2
         @test matched == false
         @test v == nothing
         @test i == 1
@@ -317,8 +345,9 @@ end
 @testset "test Repeat" begin
     let
         p = Parser()
-        matched, v, i = recognize1(Repeat(CharacterLiteral('a')),
-                                   ""; parser = p)
+        matched, v, i, p2 = parse(Repeat(CharacterLiteral('a')),
+                                  ""; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -329,7 +358,8 @@ end
     let
         p = Parser()
         node = Repeat(CharacterLiteral('a'); min=1)
-        matched, v, i = recognize1(node, ""; parser = p)
+        matched, v, i, p2 = parse(node, ""; parser = p)
+        @test p === p2
         @test matched == false
         @test v == nothing
         @test i == 1
@@ -340,8 +370,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(Repeat(CharacterLiteral('a')),
-                                   "aaa"; parser = p)
+        matched, v, i, p2 = parse(Repeat(CharacterLiteral('a')),
+                                  "aaa"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -351,8 +382,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(Repeat(CharacterLiteral('a')),
-                                   "aaab"; parser = p)
+        matched, v, i, p2 = parse(Repeat(CharacterLiteral('a')),
+                                  "aaab"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -362,8 +394,9 @@ end
     end
     let
         p = Parser()
-        matched, v, i = recognize1(Repeat(CharacterLiteral('a'); max=2),
-                                   "aaab"; parser = p)
+        matched, v, i, p2 = parse(Repeat(CharacterLiteral('a'); max=2),
+                                  "aaab"; parser = p)
+        @test p === p2
         if !matched
             @warn("parse_failed", p.parse_failures)
         end
@@ -386,8 +419,9 @@ DerivationRule(TestGrammar1, "stringOfAs",
     note_nodes_to_debug(parser, TestGrammar1, node -> true)
     @test length(parser.debug_bnfnodes) == length(TestGrammar1.uid_index)
     with_logger(logger) do
-        matched, v, i = recognize1(TestGrammar1["stringOfAs"], input;
-                                   parser = parser)
+        matched, v, i, p2 = parse(TestGrammar1["stringOfAs"], input;
+                                  parser = parser)
+        @test parser === p2
         @test matched == true
         @test v == [ 'A', 'A', 'A' ]
         @test i == 4

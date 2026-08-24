@@ -71,25 +71,24 @@ end
 `parse` is the preferred entry point for invoking the parser.  This is
 where all of the argument defaulting happens.
 
-Do not confuse `pare` with `Base.parse`.
+Do not confuse `parse` with `Base.parse`.
 
-`parse` returns two values: the result of the parse (or nothing if
-unsuccessful) and the `Parser` object that was used for parsing.
+`parse` returns four values: a boolean indicating if the parse was
+successful; the value that was read; the next index into the input;
+and the `Parserr` object.
 
-The `parse_failures` field of the `Parser` has a Set of
-[`ParseFailure`](@ref) objects if the parse failed.
+The `parse_failures` field of that `Parser` has a `Set` of
+[`ParseFailure`](@ref) objects which expose unsuccessful paths through
+the node tree.
 """
 function parse(n::BNFNode, input::AbstractString;
                index = firstindex(input), finish = lastindex(input), 
                parser::Parser = Parser(),
                context = nothing)
     matched, v, i = recognize1(parser, n, input, index, finish, context)
-    if matched
-        return v, parser
-    else
-        return nothing, parser
-    end
+    return matched, v, i, parser
 end
+
 
 """
     recognize1(n::BNFNode, input::AbstractString; parser = Parser(), index = 1, finish = lastindex(input), context = nothing)

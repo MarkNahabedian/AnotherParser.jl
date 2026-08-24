@@ -74,7 +74,7 @@
 SemVerGrammar = BNFGrammar(:SemVer)
 
 
-str2int(s) = parse(Int, s)
+str2int(s) = Base.parse(Int, s)
 
 function undot(x)
     result = []
