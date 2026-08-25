@@ -276,7 +276,7 @@ root_productions
 ## Debugging
 
 ```@docs
-debug_parsing
+note_nodes_to_debug
 AnotherParser.should_enable_debug_logging_for
 ```
 
