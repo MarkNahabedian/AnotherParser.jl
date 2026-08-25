@@ -6,7 +6,7 @@ using XML: Document, Element, Text, Comment, CData, escape
 using Logging
 using Test: TestLogger
 
-export note_nodes_to_debug
+export note_nodes_to_debug, should_enable_debug_logging_for
 
 
 PARSER_DEBUG_CSS = read(joinpath(@__DIR__, "debug_parser_formatting.css"), String)
