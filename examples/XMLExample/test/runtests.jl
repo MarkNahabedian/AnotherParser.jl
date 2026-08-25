@@ -1,5 +1,6 @@
 
 using AnotherParser
+using AnotherParser: parse
 using XMLExample
 using Test
 using Glob: glob
@@ -18,15 +19,11 @@ index_grammars()
     debug_file = joinpath(@__DIR__, "debug", testnum * ".html")
     mkpath(joinpath(@__DIR__, "debug"))
     xmltext = read_decoded(xml)
+    grammar = AllGrammars[:XML]
     p = Parser()
-    matched, v, i = recognize1(AllGrammars[:XML]["document"], xmltext; parser = p)
-    #=
-    # Why does switching to debug_parsing cause unit test failures?
-    matched, v, i = debug_parsing(AllGrammars[:XML], "document", xmltext;
-                                  parser = p,
-                                  report_file = debug_file,
-                                  enable_debug_logging_for = x -> true)
-    =#
+    note_nodes_to_debug(p, grammar, _ -> true)
+    matched, v, i = parse(grammar["document"], xmltext;
+                                  parser = p, report_file = debug_file)
     if matched == false
         @info("Parse failures",
               testnum,

@@ -54,11 +54,11 @@ using XML
     =#
     let
         xml_text = "<foo attr='yowza'>The sixth sick sheik's sixth sheep's sick.</foo>"
-        matched, v, i =
-            debug_parsing(grammar["element"], xml_text;
-                          report_file="yowza.html",
-                          enable_debug_logging_for = _ -> true,
-                          context=factory)
+        parser = Parser()
+        note_nodes_to_debug(parser, grammar, _ -> true)
+        matched, v, i, p = parse(grammar["element"], xml_text;
+                                 report_file="yowza.html",
+                                 context=factory)
         @test matched = true
         @test i == length(xml_text) + 1
         expecting = XML.Element("foo",

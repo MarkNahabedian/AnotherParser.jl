@@ -6,7 +6,7 @@ using XML: Document, Element, Text, Comment, CData, escape
 using Logging
 using Test: TestLogger
 
-export debug_parsing, note_nodes_to_debug
+export note_nodes_to_debug
 
 
 PARSER_DEBUG_CSS = read(joinpath(@__DIR__, "debug_parser_formatting.css"), String)
@@ -38,12 +38,9 @@ end
 """
     should_enable_debug_logging_for(node::BNFNode)
 
-The default value for the `enable_debug_logging_for` keyword argument
-to [`debug_parsing`](@ref).
-
-It avoids logging of [`CharacterLiteral`](@ref) nodes and of
-[`Alternatives`](@ref) nodes where every alternative is a
-`CharacterLiteral node.
+Can be passed to [`note_nodes_to_debug`](@ref) to avoid logging of
+[`CharacterLiteral`](@ref) nodes and of [`Alternatives`](@ref) nodes
+where every alternative is a `CharacterLiteral node.
 """
 function should_enable_debug_logging_for(node::BNFNode)
     # Don't enable logging for tedious nodes:
@@ -54,44 +51,6 @@ function should_enable_debug_logging_for(node::BNFNode)
     else
         true
     end
-end
-
-
-debug_parsing(node::BNFNode, input; keyargs...) =
-    debug_parsing(AllGrammars[node.grammar_name], node.name,
-                  input; keyargs...)
-
-function debug_parsing(grammar::Symbol, rulename::AbstractString,
-                       input::AbstractString; keyargs...)
-    debug_parsing(AllGrammars[grammar], rulename, input; keyargs...)
-end
-
-
-"""
-    debug_parsing(grammar::BNFGrammar, rulename::AbstractString, input::AbstractString; parser = Parser(), index = 1, finish = lastindex(input), context=nothing, report_file::AbstractString, enable_debug_logging_for = should_enable_debug_logging_for)
-
-Run the parser specified by `grammar` and `rulename` to parse `input`
-from `index` to `finish` with the specified `context` object.  The
-parsing log is written to `report_file` as HTML.  That file presents a
-hierarchichal view of how the parse progressed.
-
-enable_debug_logging_for is a function that takes a `BNFNode` as
-argument and returns true if that node should be tracked in the info
-log and false otherwise.
-"""
-function debug_parsing(grammar::BNFGrammar, rulename::AbstractString,
-                       input::AbstractString;
-                       parser = Parser(),
-                       index = 1, finish = length(input), context=nothing,
-                       report_file::AbstractString,
-                       enable_debug_logging_for = should_enable_debug_logging_for)
-    logger = TestLogger()
-    note_nodes_to_debug(parser, grammar, enable_debug_logging_for)
-        with_logger(logger) do
-            AnotherParser.recognize1(parser, grammar[rulename], input;
-                                     index = index, finish = finish,
-                                     context = context)
-        end
 end
 
 
@@ -148,7 +107,7 @@ function match_log_records(logger::TestLogger)
 end
 
 
-function process_and_report_parser_debug_log(grammar, rulename, input, logger, report_file)
+function process_and_report_parser_debug_log(node::BNFNode, input, logger, report_file)
     report_file = abspath(report_file)
     # Match logging records by call_counter and infer hierarchy:
     log_index_stack = []
@@ -254,7 +213,7 @@ function process_and_report_parser_debug_log(grammar, rulename, input, logger, r
                                 PARSER_DEBUG_SCRIPT)),
                 Element("body",
                         Element("h1",
-                                Text(grammar.name), Text(" "), Text(escape(rulename))),
+                                Text(pretty(node))),
                         Text("Parsing:"),
                         Element("div", Text(escape(input));
                                 class="input-text"),

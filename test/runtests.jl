@@ -415,20 +415,19 @@ DerivationRule(TestGrammar1, "stringOfAs",
 @testset "test debug logging" begin
     logger = TestLogger()
     parser = Parser()
+    node = TestGrammar1["stringOfAs"]
     input = "AAAb"
     note_nodes_to_debug(parser, TestGrammar1, node -> true)
     @test length(parser.debug_bnfnodes) == length(TestGrammar1.uid_index)
     with_logger(logger) do
-        matched, v, i, p2 = parse(TestGrammar1["stringOfAs"], input;
-                                  parser = parser)
+        matched, v, i, p2 = parse(node, input; parser = parser)
         @test parser === p2
         @test matched == true
         @test v == [ 'A', 'A', 'A' ]
         @test i == 4
     end
     @test length(logger.logs) == 12
-    AnotherParser.process_and_report_parser_debug_log(TestGrammar1, "stringOfAs", input,
-                                                      logger,
+    AnotherParser.process_and_report_parser_debug_log(node, input, logger,
                                                       joinpath(@__DIR__, "test_stringOfAs.html"))
 end
 

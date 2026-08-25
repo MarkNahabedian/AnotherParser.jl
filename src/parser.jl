@@ -66,7 +66,7 @@ end
 
 
 """
-    parse(n::BNFNode, input::AbstractString; index = firstindex(input), finish = lastindex(input), parser::Parser = Parser(), context = nothing)
+    parse(n::BNFNode, input::AbstractString; index = firstindex(input), finish = lastindex(input), parser::Parser = Parser(), context = nothing, report_file::AbstractString="")
 
 `parse` is the preferred entry point for invoking the parser.  This is
 where all of the argument defaulting happens.
@@ -80,13 +80,35 @@ and the `Parserr` object.
 The `parse_failures` field of that `Parser` has a `Set` of
 [`ParseFailure`](@ref) objects which expose unsuccessful paths through
 the node tree.
+
+DEBUGGING:
+
+If report_file is provided it should name an HTML file to be written.
+It will present the log of node invocations and results.  You can use
+the `parser` keyarg to provide a [`Parser`](@reg) that has been told
+which nodes should be logged.  You can use
+[`note_nodes_to_debug`](@ref) to tell that parser which nodes to log
+based on a predicate function.  It's probably best to just log all
+nodes.  The function [`should_enable_debug_logging_for`](@ref) is
+provided to not include some of the noisier nodes from logging.
 """
-function parse(n::BNFNode, input::AbstractString;
+function parse(node::BNFNode, input::AbstractString;
                index = firstindex(input), finish = lastindex(input), 
-               parser::Parser = Parser(),
-               context = nothing)
-    matched, v, i = recognize1(parser, n, input, index, finish, context)
-    return matched, v, i, parser
+               parser::Parser = Parser(), context = nothing,
+               report_file::AbstractString="")
+    if report_file == ""
+        matched, v, i = recognize1(parser, node, input, index, finish, context)
+        return matched, v, i, parser
+    else
+        let
+            logger = TestLogger()
+            with_logger(logger) do
+                matched, v, i = recognize1(parser, node, input, index, finish, context)
+            end
+            process_and_report_parser_debug_log(node, input, logger, report_file)
+            return matched, v, i, parser
+        end
+    end
 end
 
 
