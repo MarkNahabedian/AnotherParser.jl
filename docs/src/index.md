@@ -198,7 +198,7 @@ using BNFExample
 ```
 
 
-## Prepackages Examples
+## Prepackaged Examples
 
 Several larger examples are also provided.  To load them all:
 
@@ -300,6 +300,8 @@ implement [`is_left_recursive`](@ref), [`walk_nodes`](@ref), and
 
 ```@docs
 @bnfnode
+Parser
+ParseFailure
 ```
 
 

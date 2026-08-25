@@ -1,9 +1,9 @@
-export ParseFailure, Parser, recognize1
+export ParseFailure, Parser, parse, recognize1
 
 
 """
-A `ParseFailure` is noted in the `parse_failures` filed of a
-[`Parser`](@ref) for each syntax mismatch.  Its fields are:
+A `ParseFailure` is noted in the `parse_failures` field of a
+[`Parser`](@ref) for each prospective syntax mismatch.  Its fields are:
 
 * `failing_index`: the index into input where the mismatch occurred.
 * `failing_node`: The node that the input did not match.
@@ -23,6 +23,16 @@ function Base.string(pf::ParseFailure)
          " ")
 end
 
+
+"""
+    Parser()
+
+`Parser` encapulates various bookkeeping and debugging functionality
+during parsing.
+
+The `parse_failures` field accumulates [`ParseFailure`](@ref) objects
+during the parse.  These describe each node mismatch failure.
+"""
 mutable struct Parser
     # debug_bnfnodes is a list of the node uid's of nodes that should
     # be `@info` logged when they match the current input at the
