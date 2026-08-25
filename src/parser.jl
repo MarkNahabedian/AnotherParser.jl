@@ -2,7 +2,6 @@ export ParseFailure, Parser, recognize1
 
 
 """
-
 A `ParseFailure` is noted in the `parse_failures` filed of a
 [`Parser`](@ref) for each syntax mismatch.  Its fields are:
 
@@ -85,7 +84,7 @@ DEBUGGING:
 
 If report_file is provided it should name an HTML file to be written.
 It will present the log of node invocations and results.  You can use
-the `parser` keyarg to provide a [`Parser`](@reg) that has been told
+the `parser` keyarg to provide a [`Parser`](@ref) that has been told
 which nodes should be logged.  You can use
 [`note_nodes_to_debug`](@ref) to tell that parser which nodes to log
 based on a predicate function.  It's probably best to just log all
